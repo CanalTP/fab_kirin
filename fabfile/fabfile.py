@@ -34,17 +34,29 @@ def deploy():
     deploy_container_safe_all(f5NodesManagment)
 
 
-def start():
+def remove_targeted_image(id_image):
+    """ Remove an image """
+    run('docker images | grep {}'.format(id_image))
+
+
+def remove_targeted_images():
+    """ Remove several images """
+    containers_to_remove = run("docker images | grep kirin | awk '{print $3}'")
+    for container in containers_to_remove.split('\n'):
+        remove_targeted_image(container)
+
+
+def start_container():
     """ Start targeted containers in daemon mode and restart them if crash """
     run('docker-compose up --force-recreate -d')
 
 
-def stop():
+def stop_container():
     """ Stop targeted containers """
     run('docker-compose stop')
 
 
-def remove():
+def remove_container():
     """ Remove targeted containers without asking confirmation and
     remove volumes associated with containers
     """
@@ -53,9 +65,10 @@ def remove():
 
 def restart():
     """ Restart containers properly """
-    stop()
-    remove()
-    start()
+    stop_container()
+    remove_container()
+    remove_targeted_images()
+    start_container()
 
 
 @task
