@@ -3,17 +3,18 @@
 
 from fabric.api import *
 from importlib import import_module
-from f5_kisio.f5kisio import *
+import f5kisio
 
 
-def deploy_container_safe(server, f5NodesManagment):
+def deploy_container_safe(server, f5_nodes_management):
     """ Restart kirin on a specific server,
         in a safe way if load balancers are available
     """
     with settings(host_string=server):
-        f5NodesManagment.disable_node(server)
+        f5_nodes_management.disable_node(server)
         restart()
-        f5NodesManagment.enable_node(server)
+        test_deployment()
+        f5_nodes_management.enable_node(server)
 
 
 def deploy_container_safe_all(f5NodesManagment):
@@ -28,22 +29,22 @@ def deploy_container_safe_all(f5NodesManagment):
 def deploy():
     """ Deploy kirin """
     if env.use_load_balancer:
-        f5NodesManagment = SimpleF5NodesManagment(True)
+        f5_nodes_management = f5kisio.SimpleF5NodesManagment(env.ADC_HOSTNAME, verbose=True)
     else:
-        f5NodesManagment = NullF5NodesManagment()
-    deploy_container_safe_all(f5NodesManagment)
+        f5_nodes_management = f5kisio.NullF5NodesManagment()
+    deploy_container_safe_all(f5_nodes_management)
 
 
 def remove_targeted_image(id_image):
     """ Remove an image """
-    run('docker images | grep {}'.format(id_image))
+    run('docker rmi {}'.format(id_image))
 
 
 def remove_targeted_images():
     """ Remove several images """
-    containers_to_remove = run("docker images | grep kirin | awk '{print $3}'")
-    for container in containers_to_remove.split('\n'):
-        remove_targeted_image(container)
+    images_to_remove = run("docker images | grep kirin | awk '{print $3}' && docker images -f dangling=true -q")
+    for image in images_to_remove.split('\n'):
+        remove_targeted_image(image)
 
 
 def start_container():
@@ -69,6 +70,13 @@ def restart():
     remove_container()
     remove_targeted_images()
     start_container()
+
+
+def test_deployment():
+    """ Verify api kirin is OK """
+    response = local("curl -I {}/status | head -n 1".format(env.kirin_host), capture=True)
+    if response.split(' ')[1] != '200':
+        abort(response)
 
 
 @task
