@@ -37,7 +37,8 @@ def deploy():
 
 def remove_targeted_image(id_image):
     """ Remove an image """
-    run('docker rmi {}'.format(id_image))
+    with settings(warn_only=True):
+        run('docker rmi {}'.format(id_image))
 
 
 def remove_targeted_images():
