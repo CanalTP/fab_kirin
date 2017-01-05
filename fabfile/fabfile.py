@@ -1,37 +1,105 @@
 # coding=utf-8
-
-
+import json
 from fabric.api import *
 from importlib import import_module
-import f5kisio
+import abc
+import requests
+import time
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
+
+class DeploymentManager(object):
+    @abc.abstractmethod
+    def enable_node(self, node):
+        pass
+
+    @abc.abstractmethod
+    def disable_node(self, node):
+        pass
+
+
+class SafeDeploymentManager(DeploymentManager):
+    # avoid the message output : InsecureRequestWarning: Unverified HTTPS request is being made.
+    # Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/security.html
+    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
+    def enable_node(self, node):
+        header = {'X-Rundeck-Auth-Token': env.token, 'Content-Type': 'application/json', 'Accept': 'application/json'}
+        args = {'argString': '-nodename {} -state enable'.format(node)}
+
+        switch_power_on = requests.post("{}://{}:{}/api/18/job/{}/run"
+                                        .format(env.protocol, env.host, env.port, env.job, node),
+                                        headers=header, data=json.dumps(args), verify=False)
+        time.sleep(2)
+
+        response = json.loads(switch_power_on.text)
+        status_execution = requests.get("{}://{}:{}/api/17/execution/{}/state?{}"
+                                        .format(env.protocol, env.host, env.port, response['id'], env.job),
+                                        headers=header, verify=False)
+        res = json.loads(status_execution.text)
+
+        if res['executionState'] == 'SUCCEEDED':
+            print("The {} node is enabled".format(node))
+        else:
+            abort("The {} node is failed to be enabled".format(node))
+
+    def disable_node(self, node):
+        header = {'X-Rundeck-Auth-Token': env.token, 'Content-Type': 'application/json', 'Accept': 'application/json'}
+        args = {'argString': '-nodename {} -state disable'.format(node)}
+
+        switch_power_off = requests.post("{}://{}:{}/api/18/job/{}/run"
+                                         .format(env.protocol, env.host, env.port, env.job, node),
+                                         headers=header, data=json.dumps(args), verify=False)
+        time.sleep(2)
+
+        response = json.loads(switch_power_off.text)
+        status_execution = requests.get("{}://{}:{}/api/17/execution/{}/state?{}"
+                                        .format(env.protocol, env.host, env.port, response['id'], env.job),
+                                        headers=header, verify=False)
+        res = json.loads(status_execution.text)
+
+        if res['executionState'] == 'SUCCEEDED':
+            print("The {} node is disabled".format(node))
+        else:
+            abort("The {} node is failed to be disabled".format(node))
+
+
+class NoSafeDeploymentManager(DeploymentManager):
+    def enable_node(self, node):
+        """ Null impl """
+
+    def disable_node(self, node):
+        """ Null impl """
 
 
 def deploy_container_safe(server, f5_nodes_management):
     """ Restart kirin on a specific server,
         in a safe way if load balancers are available
     """
-    with settings(host_string=server):
-        f5_nodes_management.disable_node(server)
+    node = hostname2node(server)
+
+    with settings(host_string=node):
+        f5_nodes_management.disable_node(node)
         restart()
         test_deployment()
-        f5_nodes_management.enable_node(server)
+        f5_nodes_management.enable_node(node)
 
 
-def deploy_container_safe_all(f5NodesManagment):
+def deploy_container_safe_all(f5_nodes_management):
     """ Restart kirin on all servers,
     in a safe way if load balancers are available
     """
     for server in env.roledefs['kirin']:
-        execute(deploy_container_safe, server, f5NodesManagment)
+        execute(deploy_container_safe, server, f5_nodes_management)
 
 
 @task
 def deploy():
     """ Deploy kirin """
     if env.use_load_balancer:
-        f5_nodes_management = f5kisio.SimpleF5NodesManagment(env.ADC_HOSTNAME, verbose=True)
+        f5_nodes_management = SafeDeploymentManager()
     else:
-        f5_nodes_management = f5kisio.NullF5NodesManagment()
+        f5_nodes_management = NoSafeDeploymentManager()
     deploy_container_safe_all(f5_nodes_management)
 
 
@@ -89,3 +157,11 @@ def use(module_path, *args):
         path, f_name = module_path[:pos], module_path[pos+1:]
     module = import_module(path)
     getattr(module, f_name)(*args)
+
+
+def hostname2node(host):
+    """ Return the node name equivalent to hostname"""
+    # clean the host which can contain usernames from fabric
+    host_only = host.replace(env.user + '@', '').replace(env.hostname_suffix, '')
+
+    return host_only
