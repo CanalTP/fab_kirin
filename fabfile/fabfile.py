@@ -24,6 +24,8 @@ class SafeDeploymentManager(DeploymentManager):
     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
     def enable_node(self, node):
+        node = hostname2node(node)
+        print("The {} node will be enabled".format(node))
         header = {'X-Rundeck-Auth-Token': env.token, 'Content-Type': 'application/json', 'Accept': 'application/json'}
         args = {'argString': '-nodename {} -state enable'.format(node)}
 
@@ -41,9 +43,11 @@ class SafeDeploymentManager(DeploymentManager):
         if res['executionState'] == 'SUCCEEDED':
             print("The {} node is enabled".format(node))
         else:
-            abort("The {} node is failed to be enabled".format(node))
+            abort("The {} node is {}, so cannot to be enabled.".format(node, res['executionState']))
 
     def disable_node(self, node):
+        node = hostname2node(node)
+        print("The {} node will be disabled".format(node))
         header = {'X-Rundeck-Auth-Token': env.token, 'Content-Type': 'application/json', 'Accept': 'application/json'}
         args = {'argString': '-nodename {} -state disable'.format(node)}
 
@@ -61,7 +65,7 @@ class SafeDeploymentManager(DeploymentManager):
         if res['executionState'] == 'SUCCEEDED':
             print("The {} node is disabled".format(node))
         else:
-            abort("The {} node is failed to be disabled".format(node))
+            abort("The {} node is {} to be disabled.".format(node, res['executionState']))
 
 
 class NoSafeDeploymentManager(DeploymentManager):
@@ -76,13 +80,11 @@ def deploy_container_safe(server, f5_nodes_management):
     """ Restart kirin on a specific server,
         in a safe way if load balancers are available
     """
-    node = hostname2node(server)
-
-    with settings(host_string=node):
-        f5_nodes_management.disable_node(node)
+    with settings(host_string=server):
+        f5_nodes_management.disable_node(server)
         restart()
         test_deployment()
-        f5_nodes_management.enable_node(node)
+        f5_nodes_management.enable_node(server)
 
 
 def deploy_container_safe_all(f5_nodes_management):
