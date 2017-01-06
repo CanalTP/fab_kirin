@@ -6,6 +6,7 @@ import abc
 import requests
 import time
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+from retrying import Retrying
 
 
 class DeploymentManager(object):
@@ -29,21 +30,34 @@ class SafeDeploymentManager(DeploymentManager):
         header = {'X-Rundeck-Auth-Token': env.token, 'Content-Type': 'application/json', 'Accept': 'application/json'}
         args = {'argString': '-nodename {} -state enable'.format(node)}
 
-        switch_power_on = requests.post("{}://{}:{}/api/18/job/{}/run"
-                                        .format(env.protocol, env.host, env.port, env.job, node),
+        switch_power_on = requests.post("{}/api/18/job/{}/run"
+                                        .format(env.run_deck_url, env.job, node),
                                         headers=header, data=json.dumps(args), verify=False)
-        time.sleep(2)
+        response = switch_power_on.json()
 
-        response = json.loads(switch_power_on.text)
-        status_execution = requests.get("{}://{}:{}/api/17/execution/{}/state?{}"
-                                        .format(env.protocol, env.host, env.port, response['id'], env.job),
-                                        headers=header, verify=False)
-        res = json.loads(status_execution.text)
+        def check_node(query):
+            """
+            poll on state of execution until it gets a 'succeded' status
+            """
+            print('waiting ...')
+            try:
+                response = requests.get(query, headers=header, verify=False)
+            except Exception as e:
+                print("Error : %s" % e)
+                exit(1)
 
-        if res['executionState'] == 'SUCCEEDED':
-            print("The {} node is enabled".format(node))
-        else:
-            abort("The {} node is {}, so cannot to be enabled.".format(node, res['executionState']))
+            return response.json()
+        request = '{}/api/17/execution/{}/state?{}'.format(env.run_deck_url, response['id'], env.job)
+
+        try:
+            Retrying(stop_max_delay=5000,
+                     wait_fixed=500,
+                     retry_on_result=lambda status: check_node(request)['executionState'] is 'SUCCEDED')\
+                .call(check_node, request)
+        except:
+            abort("The {} node cannot be enabled.".format(node))
+
+        print("The {} node is enabled".format(node))
 
     def disable_node(self, node):
         node = hostname2node(node)
@@ -51,21 +65,34 @@ class SafeDeploymentManager(DeploymentManager):
         header = {'X-Rundeck-Auth-Token': env.token, 'Content-Type': 'application/json', 'Accept': 'application/json'}
         args = {'argString': '-nodename {} -state disable'.format(node)}
 
-        switch_power_off = requests.post("{}://{}:{}/api/18/job/{}/run"
-                                         .format(env.protocol, env.host, env.port, env.job, node),
+        switch_power_off = requests.post("{}/api/18/job/{}/run"
+                                         .format(env.run_deck_url, env.job, node),
                                          headers=header, data=json.dumps(args), verify=False)
-        time.sleep(2)
+        response = switch_power_off.json()
 
-        response = json.loads(switch_power_off.text)
-        status_execution = requests.get("{}://{}:{}/api/17/execution/{}/state?{}"
-                                        .format(env.protocol, env.host, env.port, response['id'], env.job),
-                                        headers=header, verify=False)
-        res = json.loads(status_execution.text)
+        def check_node(query):
+            """
+            poll on state of execution until it gets a 'succeded' status
+            """
+            print('waiting ...')
+            try:
+                response = requests.get(query, headers=header, verify=False)
+            except Exception as e:
+                print("Error : %s" % e)
+                exit(1)
 
-        if res['executionState'] == 'SUCCEEDED':
-            print("The {} node is disabled".format(node))
-        else:
-            abort("The {} node is {} to be disabled.".format(node, res['executionState']))
+            return response.json()
+        request = '{}/api/17/execution/{}/state?{}'.format(env.run_deck_url, response['id'], env.job)
+
+        try:
+            Retrying(stop_max_delay=5000,
+                     wait_fixed=500,
+                     retry_on_result=lambda status: check_node(request)['executionState'] is not 'SUCCEDED')\
+                .call(check_node, request)
+        except:
+            abort("The {} node cannot be disabled.".format(node))
+
+        print("The {} node is disabled".format(node))
 
 
 class NoSafeDeploymentManager(DeploymentManager):
@@ -93,6 +120,8 @@ def deploy_container_safe_all(f5_nodes_management):
     """
     for server in env.roledefs['kirin']:
         execute(deploy_container_safe, server, f5_nodes_management)
+        # need to wait between both node execution because using same token
+        time.sleep(2)
 
 
 @task
@@ -164,6 +193,7 @@ def use(module_path, *args):
 def hostname2node(host):
     """ Return the node name equivalent to hostname"""
     # clean the host which can contain usernames from fabric
-    host_only = host.replace(env.user + '@', '').replace(env.hostname_suffix, '')
+    # for example : user@hostname.suffix -> hostname
+    host_only = host.replace(env.user + '@', '').replace(env.hostname_suffix_to_remove, '')
 
     return host_only
