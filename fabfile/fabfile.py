@@ -27,11 +27,11 @@ class SafeDeploymentManager(DeploymentManager):
     def enable_node(self, node):
         node = hostname2node(node)
         print("The {} node will be enabled".format(node))
-        header = {'X-Rundeck-Auth-Token': env.token, 'Content-Type': 'application/json', 'Accept': 'application/json'}
+        header = {'X-Rundeck-Auth-Token': env.rundeck_token, 'Content-Type': 'application/json', 'Accept': 'application/json'}
         args = {'argString': '-nodename {} -state enable'.format(node)}
 
         switch_power_on = requests.post("{}/api/18/job/{}/run"
-                                        .format(env.run_deck_url, env.job, node),
+                                        .format(env.rundeck_url, env.rundeck_job, node),
                                         headers=header, data=json.dumps(args), verify=False)
         response = switch_power_on.json()
 
@@ -47,7 +47,7 @@ class SafeDeploymentManager(DeploymentManager):
                 exit(1)
 
             return response.json()
-        request = '{}/api/17/execution/{}/state?{}'.format(env.run_deck_url, response['id'], env.job)
+        request = '{}/api/17/execution/{}/state?{}'.format(env.rundeck_url, response['id'], env.rundeck_job)
 
         try:
             Retrying(stop_max_delay=5000,
@@ -62,11 +62,11 @@ class SafeDeploymentManager(DeploymentManager):
     def disable_node(self, node):
         node = hostname2node(node)
         print("The {} node will be disabled".format(node))
-        header = {'X-Rundeck-Auth-Token': env.token, 'Content-Type': 'application/json', 'Accept': 'application/json'}
+        header = {'X-Rundeck-Auth-Token': env.rundeck_token, 'Content-Type': 'application/json', 'Accept': 'application/json'}
         args = {'argString': '-nodename {} -state disable'.format(node)}
 
         switch_power_off = requests.post("{}/api/18/job/{}/run"
-                                         .format(env.run_deck_url, env.job, node),
+                                         .format(env.rundeck_url, env.rundeck_job, node),
                                          headers=header, data=json.dumps(args), verify=False)
         response = switch_power_off.json()
 
@@ -82,7 +82,7 @@ class SafeDeploymentManager(DeploymentManager):
                 exit(1)
 
             return response.json()
-        request = '{}/api/17/execution/{}/state?{}'.format(env.run_deck_url, response['id'], env.job)
+        request = '{}/api/17/execution/{}/state?{}'.format(env.rundeck_url, response['id'], env.rundeck_job)
 
         try:
             Retrying(stop_max_delay=5000,
