@@ -5,7 +5,6 @@ from importlib import import_module
 import abc
 import requests
 import time
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from retrying import Retrying
 
 
@@ -22,7 +21,7 @@ class DeploymentManager(object):
 class SafeDeploymentManager(DeploymentManager):
     # avoid the message output : InsecureRequestWarning: Unverified HTTPS request is being made.
     # Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/security.html
-    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+    requests.packages.urllib3.disable_warnings()
 
     def enable_node(self, node):
         node = hostname2node(node)
