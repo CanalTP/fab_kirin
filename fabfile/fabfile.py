@@ -43,7 +43,7 @@ class SafeDeploymentManager(DeploymentManager):
             try:
                 response = requests.get(query, headers=header, verify=False)
             except Exception as e:
-                print("Error : %s" % e)
+                print("Error : {}".format(e))
                 exit(1)
 
             return response.json()
@@ -78,7 +78,7 @@ class SafeDeploymentManager(DeploymentManager):
             try:
                 response = requests.get(query, headers=header, verify=False)
             except Exception as e:
-                print("Error : %s" % e)
+                print("Error : {}".format(e))
                 exit(1)
 
             return response.json()
