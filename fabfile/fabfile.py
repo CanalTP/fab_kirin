@@ -173,9 +173,27 @@ def restart():
 
 def test_deployment():
     """ Verify api kirin is OK """
-    response = local("curl -I {}/status | head -n 1".format(env.kirin_host), capture=True)
-    if response.split(' ')[1] != '200':
-        abort(response)
+    def check_status(query):
+        """
+        poll on state of execution until it gets a 'OK' status
+        """
+        print('waiting ...')
+        try:
+            response = requests.get(query)
+        except Exception as e:
+            print("Error : {}".format(e))
+            exit(1)
+
+        return response.status_code
+    request = '{}/status'.format(env.kirin_host)
+
+    try:
+        Retrying(stop_max_delay=5000,
+                 wait_fixed=100,
+                 retry_on_result=lambda status: check_status(request) != 200)\
+            .call(check_status, request)
+    except Exception as e:
+        abort(e)
 
 
 @task
