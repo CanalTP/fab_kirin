@@ -46,12 +46,12 @@ class SafeDeploymentManager(DeploymentManager):
                 exit(1)
 
             return response.json()
-        request = '{}/api/17/execution/{}/state?{}'.format(env.rundeck_url, response['id'], env.rundeck_job)
+        request = '{}/api/18/execution/{}/state?{}'.format(env.rundeck_url, response['id'], env.rundeck_job)
 
         try:
             Retrying(stop_max_delay=5000,
                      wait_fixed=500,
-                     retry_on_result=lambda status: check_node(request)['executionState'] is 'SUCCEDED')\
+                     retry_on_result=lambda status: check_node(request)['executionState'] == 'SUCCEEDED')\
                 .call(check_node, request)
         except:
             abort("The {} node cannot be enabled.".format(node))
@@ -81,12 +81,12 @@ class SafeDeploymentManager(DeploymentManager):
                 exit(1)
 
             return response.json()
-        request = '{}/api/17/execution/{}/state?{}'.format(env.rundeck_url, response['id'], env.rundeck_job)
+        request = '{}/api/18/execution/{}/state?{}'.format(env.rundeck_url, response['id'], env.rundeck_job)
 
         try:
             Retrying(stop_max_delay=5000,
                      wait_fixed=500,
-                     retry_on_result=lambda status: check_node(request)['executionState'] is not 'SUCCEDED')\
+                     retry_on_result=lambda status: check_node(request)['executionState'] == 'SUCCEEDED')\
                 .call(check_node, request)
         except:
             abort("The {} node cannot be disabled.".format(node))
@@ -120,7 +120,7 @@ def deploy_container_safe_all(f5_nodes_management):
     for server in env.roledefs['kirin']:
         execute(deploy_container_safe, server, f5_nodes_management)
         # need to wait between both node execution because using same token
-        time.sleep(2)
+        time.sleep(5)
 
 
 @task
