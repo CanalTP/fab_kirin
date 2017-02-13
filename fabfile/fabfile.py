@@ -148,6 +148,7 @@ def remove_targeted_images():
 
 def start_container():
     """ Start targeted containers in daemon mode and restart them if crash """
+    run('docker-compose pull')
     run('docker-compose up --force-recreate -d')
 
 
