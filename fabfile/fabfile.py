@@ -6,6 +6,8 @@ import abc
 import requests
 import time
 from retrying import Retrying
+from fabric.contrib.files import upload_template as _upload_template
+import os
 
 
 class DeploymentManager(object):
@@ -38,9 +40,9 @@ class SafeDeploymentManager(DeploymentManager):
             """
             poll on state of execution until it gets a 'succeded' status
             """
-            print('waiting ...')
             try:
                 response = requests.get(query, headers=header, verify=False)
+                print('waiting for enable node ...')
             except Exception as e:
                 print("Error : {}".format(e))
                 exit(1)
@@ -73,9 +75,9 @@ class SafeDeploymentManager(DeploymentManager):
             """
             poll on state of execution until it gets a 'succeded' status
             """
-            print('waiting ...')
             try:
                 response = requests.get(query, headers=header, verify=False)
+                print('waiting for disable node ...')
             except Exception as e:
                 print("Error : {}".format(e))
                 exit(1)
@@ -123,13 +125,36 @@ def deploy_container_safe_all(f5_nodes_management):
         time.sleep(5)
 
 
+def update_kirin():
+    """ Retrieve new kirin image
+    To tag the image, we pull the previous tag, tag it as our own and push it
+    """
+    run('docker pull {image}:{prev_tag}'.format(image=env.docker_image_kirin, prev_tag=env.previous_docker_tag))
+    run('docker tag {image}:{prev_tag} {image}:{new_tag}'
+        .format(image=env.docker_image_kirin, prev_tag=env.previous_docker_tag, new_tag=env.current_docker_tag))
+    run('docker push {image}:{new_tag}'.format(image=env.docker_image_kirin, new_tag=env.current_docker_tag))
+
+
+def update_kirin_conf():
+    """ Retrieve new kirin conf image
+    Build new conf and push it
+    """
+    run('docker build -t {image}:{new_tag} .'
+        .format(image=env.docker_image_kirin_conf, prev_tag=env.previous_docker_tag, new_tag=env.current_docker_tag))
+    run('docker push {image}:{new_tag}'.format(image=env.docker_image_kirin_conf, new_tag=env.current_docker_tag))
+
+
 @task
+@roles('kirin')
 def deploy():
     """ Deploy kirin """
     if env.use_load_balancer:
         f5_nodes_management = SafeDeploymentManager()
     else:
         f5_nodes_management = NoSafeDeploymentManager()
+    upload_template('docker-compose.yml', '/{}/'.format(env.user), context={'env': env})
+    update_kirin()
+    update_kirin_conf()
     deploy_container_safe_all(f5_nodes_management)
 
 
@@ -148,7 +173,6 @@ def remove_targeted_images():
 
 def start_container():
     """ Start targeted containers in daemon mode and restart them if crash """
-    run('docker-compose pull')
     run('docker-compose up --force-recreate -d')
 
 
@@ -178,15 +202,15 @@ def test_deployment():
         """
         poll on state of execution until it gets a 'OK' status
         """
-        print('waiting ...')
         try:
             response = requests.get(query)
+            print('waiting to check status ...')
         except Exception as e:
             print("Error : {}".format(e))
             exit(1)
 
         return response.status_code
-    request = '{}/status'.format(env.kirin_host)
+    request = 'http://{}/status'.format(env.kirin_host)
 
     try:
         Retrying(stop_max_delay=5000,
@@ -195,6 +219,7 @@ def test_deployment():
             .call(check_status, request)
     except Exception as e:
         abort(e)
+    print("{} is OK".format(request))
 
 
 @task
@@ -215,3 +240,12 @@ def hostname2node(host):
     host_only = host.replace(env.user + '@', '').replace(env.hostname_suffix_to_remove, '')
 
     return host_only
+
+
+def upload_template(filename, destination, context=None, **kwargs):
+    kwargs['use_jinja'] = True
+    kwargs['template_dir'] = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'templates/{}'.format(env.name))
+    kwargs['context'] = context
+    kwargs['use_sudo'] = False
+    kwargs['backup'] = False
+    _upload_template(filename, destination, **kwargs)

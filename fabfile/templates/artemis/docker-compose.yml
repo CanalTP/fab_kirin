@@ -1,0 +1,21 @@
+version: '2'
+
+services:
+  kirin_config:
+    image: {{env.docker_image_kirin_conf}}:{{env.current_docker_tag}}
+    stdin_open: true
+
+  kirin:
+    ports:
+     - "{{env.kirin_port}}:{{env.kirin_port}}"
+    image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
+    restart: always
+    volumes_from:
+     - kirin_config
+
+  kirin_background:
+    image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
+    restart: always
+    volumes_from:
+     - kirin_config
+    command: python ./manage.py load_realtime
