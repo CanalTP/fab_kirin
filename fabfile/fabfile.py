@@ -140,7 +140,7 @@ def update_kirin_conf():
     Build new conf and push it
     """
     run('docker build -t {image}:{new_tag} .'
-        .format(image=env.docker_image_kirin_conf, prev_tag=env.previous_docker_tag, new_tag=env.current_docker_tag))
+        .format(image=env.docker_image_kirin_conf, new_tag=env.current_docker_tag))
     run('docker push {image}:{new_tag}'.format(image=env.docker_image_kirin_conf, new_tag=env.current_docker_tag))
 
 
@@ -152,7 +152,7 @@ def deploy():
         f5_nodes_management = SafeDeploymentManager()
     else:
         f5_nodes_management = NoSafeDeploymentManager()
-    upload_template('docker-compose.yml', '/{}/'.format(env.user), context={'env': env})
+    upload_template('docker-compose.yml', '{}'.format(env.path), context={'env': env})
     update_kirin()
     update_kirin_conf()
     deploy_container_safe_all(f5_nodes_management)
@@ -244,7 +244,10 @@ def hostname2node(host):
 
 def upload_template(filename, destination, context=None, **kwargs):
     kwargs['use_jinja'] = True
-    kwargs['template_dir'] = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'templates/{}'.format(env.name))
+    if 'artemis' in env.name:
+        kwargs['template_dir'] = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'templates/artemis')
+    else:
+        kwargs['template_dir'] = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'templates')
     kwargs['context'] = context
     kwargs['use_sudo'] = False
     kwargs['backup'] = False
