@@ -153,6 +153,7 @@ def deploy():
     else:
         f5_nodes_management = NoSafeDeploymentManager()
     upload_template('docker-compose.yml', '{}'.format(env.path), context={'env': env})
+    upload_template('settings.py', '{}'.format(env.path), context={'env': env})
     update_kirin()
     update_kirin_conf()
     deploy_container_safe_all(f5_nodes_management)

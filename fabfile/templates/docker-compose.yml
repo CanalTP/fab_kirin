@@ -16,9 +16,9 @@ services:
     logging:
       driver: "syslog"
       options:
-        syslog-address: "tcp://{{env.host_syslog}}:514"
+        syslog-address: "{{env.protocole_syslog}}://{{env.host_syslog}}:{{env.port_syslog}}"
         syslog-facility: "local7"
-        syslog-tag: "kirin"
+        tag: "kirin"
 
     environment:
       VIRTUAL_HOST: {{env.kirin_host}}
@@ -32,9 +32,9 @@ services:
     logging:
       driver: "syslog"
       options:
-        syslog-address: "tcp://{{env.host_syslog}}:514"
+        syslog-address: "{{env.protocole_syslog}}://{{env.host_syslog}}:{{env.port_syslog}}"
         syslog-facility: "local7"
-        syslog-tag: "kirin"
+        tag: "kirin-background"
 
 networks:
   default:

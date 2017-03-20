@@ -29,7 +29,7 @@ LOGGER = {
     'disable_existing_loggers': True,
     'formatters': {
         'default': {
-            'format': '[%(asctime)s] [%(levelname)5s] [%(process)5s] [%(name)25s - kirin_prod] %(message)s',
+            'format': '[%(asctime)s] [%(levelname)5s] [%(process)5s] [%(name)25s - kirin_{{env.name}}] %(message)s',
         },
     },
     'handlers': {
