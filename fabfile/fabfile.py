@@ -136,49 +136,6 @@ def update_kirin():
     run('docker push {image}:{new_tag}'.format(image=env.docker_image_kirin, new_tag=env.current_docker_tag))
 
 
-def update_kirin_conf():
-    """ Retrieve new kirin conf image
-    To tag the image, we pull the previous tag, tag it as our own and push it
-    """
-    run('docker pull {image}:{prev_tag}'.format(image=env.docker_image_kirin_conf, prev_tag=env.previous_docker_tag))
-    run('docker tag {image}:{prev_tag} {image}:{new_tag}'
-        .format(image=env.docker_image_kirin_conf, prev_tag=env.previous_docker_tag, new_tag=env.current_docker_tag))
-    run('docker push {image}:{new_tag}'.format(image=env.docker_image_kirin_conf, new_tag=env.current_docker_tag))
-
-
-@task
-def build(version):
-    """ Build kirin images """
-    run('git clone git@github.com:CanalTP/fab_kirin.git')
-
-    # build kirin image
-    local('docker build -t navitia/kirin:{} .'.format(version))
-    local('docker tag navitia/kirin:{} {}:{}'.format(version, env.docker_image_kirin, env.previous_docker_tag))
-    local('docker push {image}:{prev_tag}'.format(image=env.docker_image_kirin, prev_tag=env.previous_docker_tag))
-
-    # retrieve settings.py for kirin conf
-    template_env = Environment(loader=FileSystemLoader('{}'.format(env.repo_tmpl)))
-    settings_template = template_env.get_template('settings.py.jinja')
-    final_settings_file = settings_template.render(user_kirin_postgres=env.user_kirin_postgres,
-                                                   pwd_kirin_postgres=env.pwd_kirin_postgres,
-                                                   tyr_postgres_database=env.tyr_postgres_database,
-                                                   kirin_postgres_database=env.kirin_postgres_database,
-                                                   navitia_url=env.navitia_url,
-                                                   navitia_instance=env.navitia_instance,
-                                                   navitia_token=env.navitia_token,
-                                                   user_rabbitmq=env.user_rabbitmq,
-                                                   pwd_rabbitmq=env.pwd_rabbitmq,
-                                                   rabbitmq_url=env.rabbitmq_url,
-                                                   name=env.name)
-    local('echo "{}" >> {}/settings.py '.format(final_settings_file, env.repo_tmpl))
-
-    # build kirin conf image
-    local('cd {} && docker build -t navitia/kirin_conf:{} .'.format(env.repo_tmpl, version))
-    local('docker tag navitia/kirin_conf:{version} {image}:{prev_tag}'
-          .format(version=version, image=env.docker_image_kirin_conf, prev_tag=env.previous_docker_tag))
-    local('docker push {image}:{prev_tag}'.format(image=env.docker_image_kirin_conf, prev_tag=env.previous_docker_tag))
-
-
 @task
 @roles('kirin')
 def deploy():
@@ -189,7 +146,6 @@ def deploy():
         f5_nodes_management = NoSafeDeploymentManager()
     upload_template('docker-compose.yml', '{}'.format(env.path), context={'env': env})
     update_kirin()
-    update_kirin_conf()
     deploy_container_safe_all(f5_nodes_management)
 
 

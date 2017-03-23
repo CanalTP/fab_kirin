@@ -1,21 +1,23 @@
 version: '2'
 
 services:
-  kirin_config:
-    image: {{env.docker_image_kirin_conf}}:{{env.current_docker_tag}}
-    stdin_open: true
-
   kirin:
     ports:
      - "{{env.kirin_port}}:{{env.kirin_port}}"
     image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
     restart: always
-    volumes_from:
-     - kirin_config
+    environment:
+      JORMUNGANDR_SQLALCHEMY_DATABASE_URI: "postgresql://{{env.user_kirin_postgres}}:{{env.pwd_kirin_postgres}}@{{env.tyr_postgres_database}}/{{env.kirin_postgres_database}}"
+      JORMUNGANDR_NAVITIA_URL: {{env.navitia_url}}
+      JORMUNGANDR_NAVITIA_INSTANCE: {{env.navitia_instance}}
+      RABBITMQ_CONNECTION_STRING: 'pyamqp://{{env.user_rabbitmq}}:{{env.pwd_rabbitmq}}@{{env.rabbitmq_url}}:5672//?heartbeat=60'
 
   kirin_background:
     image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
     restart: always
-    volumes_from:
-     - kirin_config
     command: python ./manage.py load_realtime
+    environment:
+      JORMUNGANDR_SQLALCHEMY_DATABASE_URI: "postgresql://{{env.user_kirin_postgres}}:{{env.pwd_kirin_postgres}}@{{env.tyr_postgres_database}}/{{env.kirin_postgres_database}}"
+      JORMUNGANDR_NAVITIA_URL: {{env.navitia_url}}
+      JORMUNGANDR_NAVITIA_INSTANCE: {{env.navitia_instance}}
+      RABBITMQ_CONNECTION_STRING: 'pyamqp://{{env.user_rabbitmq}}:{{env.pwd_rabbitmq}}@{{env.rabbitmq_url}}:5672//?heartbeat=60'

@@ -1,33 +1,28 @@
 version: '2'
 
 services:
-  kirin_config:
-    image: {{env.docker_image_kirin_conf}}:{{env.current_docker_tag}}
-    stdin_open: true
-    restart: on-failure
-
   kirin:
     ports:
      - "{{env.kirin_port}}:{{env.kirin_port}}"
     image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
     restart: always
-    volumes_from:
-     - kirin_config
     logging:
       driver: "syslog"
       options:
         syslog-address: "{{env.protocole_syslog}}://{{env.host_syslog}}:{{env.port_syslog}}"
         syslog-facility: "local7"
         tag: "kirin"
-
     environment:
       VIRTUAL_HOST: {{env.kirin_host}}
+      JORMUNGANDR_SQLALCHEMY_DATABASE_URI: "postgresql://{{env.user_kirin_postgres}}:{{env.pwd_kirin_postgres}}@{{env.tyr_postgres_database}}/{{env.kirin_postgres_database}}"
+      JORMUNGANDR_NAVITIA_URL: {{env.navitia_url}}
+      JORMUNGANDR_NAVITIA_TOKEN: {{env.navitia_token}}
+      RABBITMQ_CONNECTION_STRING: 'pyamqp://{{env.user_rabbitmq}}:{{env.pwd_rabbitmq}}@{{env.rabbitmq_url}}:5672//?heartbeat=60'
+      JORMUNGANDR_LOG_FORMAT: '[%(asctime)s] [%(levelname)5s] [%(process)5s] [%(name)25s - kirin_{{env.name}}] %(message)s'
 
   kirin_background:
     image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
     restart: always
-    volumes_from:
-     - kirin_config
     command: python ./manage.py load_realtime
     logging:
       driver: "syslog"
@@ -35,6 +30,12 @@ services:
         syslog-address: "{{env.protocole_syslog}}://{{env.host_syslog}}:{{env.port_syslog}}"
         syslog-facility: "local7"
         tag: "kirin-background"
+    environment:
+      JORMUNGANDR_SQLALCHEMY_DATABASE_URI: "postgresql://{{env.user_kirin_postgres}}:{{env.pwd_kirin_postgres}}@{{env.tyr_postgres_database}}/{{env.kirin_postgres_database}}"
+      JORMUNGANDR_NAVITIA_URL: {{env.navitia_url}}
+      JORMUNGANDR_NAVITIA_TOKEN: {{env.navitia_token}}
+      RABBITMQ_CONNECTION_STRING: 'pyamqp://{{env.user_rabbitmq}}:{{env.pwd_rabbitmq}}@{{env.rabbitmq_url}}:5672//?heartbeat=60'
+      JORMUNGANDR_LOG_FORMAT: '[%(asctime)s] [%(levelname)5s] [%(process)5s] [%(name)25s - kirin_{{env.name}}] %(message)s'
 
 networks:
   default:
