@@ -17,7 +17,7 @@ services:
       JORMUNGANDR_SQLALCHEMY_DATABASE_URI: "postgresql://{{env.user_kirin_postgres}}:{{env.pwd_kirin_postgres}}@{{env.tyr_postgres_database}}/{{env.kirin_postgres_database}}"
       JORMUNGANDR_NAVITIA_URL: {{env.navitia_url}}
       JORMUNGANDR_NAVITIA_TOKEN: {{env.navitia_token}}
-      RABBITMQ_CONNECTION_STRING: 'pyamqp://{{env.user_rabbitmq}}:{{env.pwd_rabbitmq}}@{{env.rabbitmq_url}}:5672//?heartbeat=60'
+      KIRIN_RABBITMQ_CONNECTION_STRING: 'pyamqp://{{env.user_rabbitmq}}:{{env.pwd_rabbitmq}}@{{env.rabbitmq_url}}:5672//?heartbeat=60'
       JORMUNGANDR_LOG_FORMAT: '[%(asctime)s] [%(levelname)5s] [%(process)5s] [%(name)25s - kirin_{{env.name}}] %(message)s'
 
   kirin_background:
@@ -34,7 +34,7 @@ services:
       JORMUNGANDR_SQLALCHEMY_DATABASE_URI: "postgresql://{{env.user_kirin_postgres}}:{{env.pwd_kirin_postgres}}@{{env.tyr_postgres_database}}/{{env.kirin_postgres_database}}"
       JORMUNGANDR_NAVITIA_URL: {{env.navitia_url}}
       JORMUNGANDR_NAVITIA_TOKEN: {{env.navitia_token}}
-      RABBITMQ_CONNECTION_STRING: 'pyamqp://{{env.user_rabbitmq}}:{{env.pwd_rabbitmq}}@{{env.rabbitmq_url}}:5672//?heartbeat=60'
+      KIRIN_RABBITMQ_CONNECTION_STRING: 'pyamqp://{{env.user_rabbitmq}}:{{env.pwd_rabbitmq}}@{{env.rabbitmq_url}}:5672//?heartbeat=60'
       JORMUNGANDR_LOG_FORMAT: '[%(asctime)s] [%(levelname)5s] [%(process)5s] [%(name)25s - kirin_{{env.name}}] %(message)s'
 
 networks:
