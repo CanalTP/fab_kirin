@@ -14,7 +14,7 @@ services:
         tag: "kirin"
     environment:
       VIRTUAL_HOST: {{env.kirin_host}}
-      KIRIN_SQLALCHEMY_DATABASE_URI: "postgresql://{{env.user_kirin_postgres}}:{{env.pwd_kirin_postgres}}@{{env.tyr_postgres_database}}/{{env.kirin_postgres_database}}"
+      KIRIN_SQLALCHEMY_DATABASE_URI: "postgresql://{{env.user_kirin_postgres}}:{{env.pwd_kirin_postgres}}@{{env.postgres_database}}/{{env.kirin_postgres_database}}"
       KIRIN_NAVITIA_URL: {{env.navitia_url}}
       KIRIN_NAVITIA_TOKEN: {{env.navitia_token}}
       KIRIN_RABBITMQ_CONNECTION_STRING: 'pyamqp://{{env.user_rabbitmq}}:{{env.pwd_rabbitmq}}@{{env.rabbitmq_url}}:5672//?heartbeat=60'
@@ -31,7 +31,7 @@ services:
         syslog-facility: "local7"
         tag: "kirin-background"
     environment:
-      KIRIN_SQLALCHEMY_DATABASE_URI: "postgresql://{{env.user_kirin_postgres}}:{{env.pwd_kirin_postgres}}@{{env.tyr_postgres_database}}/{{env.kirin_postgres_database}}"
+      KIRIN_SQLALCHEMY_DATABASE_URI: "postgresql://{{env.user_kirin_postgres}}:{{env.pwd_kirin_postgres}}@{{env.postgres_database}}/{{env.kirin_postgres_database}}"
       KIRIN_NAVITIA_URL: {{env.navitia_url}}
       KIRIN_NAVITIA_TOKEN: {{env.navitia_token}}
       KIRIN_RABBITMQ_CONNECTION_STRING: 'pyamqp://{{env.user_rabbitmq}}:{{env.pwd_rabbitmq}}@{{env.rabbitmq_url}}:5672//?heartbeat=60'
