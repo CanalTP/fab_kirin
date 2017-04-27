@@ -52,9 +52,8 @@ class SafeDeploymentManager(DeploymentManager):
         request = '{}/api/18/execution/{}/state?{}'.format(env.rundeck_url, response['id'], env.rundeck_job)
 
         try:
-            Retrying(stop_max_delay=5000,
-                     wait_fixed=500,
-                     retry_on_result=lambda status: check_node(request)['executionState'] == 'SUCCEEDED')\
+            Retrying(wait_fixed=500,
+                     retry_on_result=lambda status: check_node(request).get('executionState') != 'SUCCEEDED')\
                 .call(check_node, request)
         except:
             abort("The {} node cannot be enabled.".format(node))
@@ -87,9 +86,8 @@ class SafeDeploymentManager(DeploymentManager):
         request = '{}/api/18/execution/{}/state?{}'.format(env.rundeck_url, response['id'], env.rundeck_job)
 
         try:
-            Retrying(stop_max_delay=5000,
-                     wait_fixed=500,
-                     retry_on_result=lambda status: check_node(request)['executionState'] == 'SUCCEEDED')\
+            Retrying(wait_fixed=500,
+                     retry_on_result=lambda status: check_node(request).get('executionState') != 'SUCCEEDED')\
                 .call(check_node, request)
         except:
             abort("The {} node cannot be disabled.".format(node))
