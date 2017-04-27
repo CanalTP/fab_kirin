@@ -52,7 +52,7 @@ class SafeDeploymentManager(DeploymentManager):
         request = '{}/api/18/execution/{}/state?{}'.format(env.rundeck_url, response['id'], env.rundeck_job)
 
         try:
-            Retrying(wait_fixed=500,
+            Retrying(stop_max_delay=10000, wait_fixed=500,
                      retry_on_result=lambda status: check_node(request).get('executionState') != 'SUCCEEDED')\
                 .call(check_node, request)
         except:
@@ -86,7 +86,7 @@ class SafeDeploymentManager(DeploymentManager):
         request = '{}/api/18/execution/{}/state?{}'.format(env.rundeck_url, response['id'], env.rundeck_job)
 
         try:
-            Retrying(wait_fixed=500,
+            Retrying(stop_max_delay=10000, wait_fixed=500,
                      retry_on_result=lambda status: check_node(request).get('executionState') != 'SUCCEEDED')\
                 .call(check_node, request)
         except:
