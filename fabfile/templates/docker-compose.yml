@@ -6,17 +6,20 @@ services:
      - "{{env.kirin_port}}:{{env.kirin_port}}"
     image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
     restart: always
+{% if env.use_syslog %}
     logging:
       driver: "syslog"
       options:
         syslog-address: "{{env.protocole_syslog}}://{{env.host_syslog}}:{{env.port_syslog}}"
         syslog-facility: "local7"
         tag: "kirin"
+{% endif %}
     environment:
       VIRTUAL_HOST: {{env.kirin_host}}
       KIRIN_SQLALCHEMY_DATABASE_URI: "postgresql://{{env.user_kirin_postgres}}:{{env.pwd_kirin_postgres}}@{{env.postgres_database}}/{{env.kirin_postgres_database}}"
       KIRIN_NAVITIA_URL: {{env.navitia_url}}
       KIRIN_NAVITIA_TOKEN: {{env.navitia_token}}
+      KIRIN_NAVITIA_INSTANCE: {{env.navitia_instance}}
       KIRIN_RABBITMQ_CONNECTION_STRING: 'pyamqp://{{env.user_rabbitmq}}:{{env.pwd_rabbitmq}}@{{env.rabbitmq_url}}:5672//?heartbeat=60'
       KIRIN_LOG_FORMAT: '[%(asctime)s] [%(levelname)5s] [%(process)5s] [%(name)25s - kirin_{{env.name}}] %(message)s'
 
@@ -24,20 +27,25 @@ services:
     image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
     restart: always
     command: python ./manage.py load_realtime
+{% if env.use_syslog %}
     logging:
       driver: "syslog"
       options:
         syslog-address: "{{env.protocole_syslog}}://{{env.host_syslog}}:{{env.port_syslog}}"
         syslog-facility: "local7"
         tag: "kirin-background"
+{% endif %}
     environment:
       KIRIN_SQLALCHEMY_DATABASE_URI: "postgresql://{{env.user_kirin_postgres}}:{{env.pwd_kirin_postgres}}@{{env.postgres_database}}/{{env.kirin_postgres_database}}"
       KIRIN_NAVITIA_URL: {{env.navitia_url}}
       KIRIN_NAVITIA_TOKEN: {{env.navitia_token}}
+      KIRIN_NAVITIA_INSTANCE: {{env.navitia_instance}}
       KIRIN_RABBITMQ_CONNECTION_STRING: 'pyamqp://{{env.user_rabbitmq}}:{{env.pwd_rabbitmq}}@{{env.rabbitmq_url}}:5672//?heartbeat=60'
       KIRIN_LOG_FORMAT: '[%(asctime)s] [%(levelname)5s] [%(process)5s] [%(name)25s - kirin_{{env.name}}] %(message)s'
 
+{% if env.docker_network %}
 networks:
   default:
     external:
-      name: canaltp
+      name: docker_network
+{% endif %}

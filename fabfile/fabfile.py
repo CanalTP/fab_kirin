@@ -11,6 +11,8 @@ import os
 from jinja2 import Environment, FileSystemLoader
 
 
+env.use_syslog = True
+
 class DeploymentManager(object):
     @abc.abstractmethod
     def enable_node(self, node):
@@ -103,23 +105,23 @@ class NoSafeDeploymentManager(DeploymentManager):
         """ Null impl """
 
 
-def deploy_container_safe(server, f5_nodes_management):
+def deploy_container_safe(server, node_manager):
     """ Restart kirin on a specific server,
         in a safe way if load balancers are available
     """
     with settings(host_string=server):
-        f5_nodes_management.disable_node(server)
+        node_manager.disable_node(server)
         restart()
         test_deployment()
-        f5_nodes_management.enable_node(server)
+        node_manager.enable_node(server)
 
 
-def deploy_container_safe_all(f5_nodes_management):
+def deploy_container_safe_all(node_manager):
     """ Restart kirin on all servers,
     in a safe way if load balancers are available
     """
     for server in env.roledefs['kirin']:
-        execute(deploy_container_safe, server, f5_nodes_management)
+        execute(deploy_container_safe, server, node_manager)
         # need to wait between both node execution because using same token
         time.sleep(5)
 
@@ -139,12 +141,12 @@ def update_kirin():
 def deploy():
     """ Deploy kirin """
     if env.use_load_balancer:
-        f5_nodes_management = SafeDeploymentManager()
+        node_manager = SafeDeploymentManager()
     else:
-        f5_nodes_management = NoSafeDeploymentManager()
+        node_manager = NoSafeDeploymentManager()
     upload_template('docker-compose.yml', '{}'.format(env.path), context={'env': env})
     update_kirin()
-    deploy_container_safe_all(f5_nodes_management)
+    deploy_container_safe_all(node_manager)
 
 
 def remove_targeted_image(id_image):
@@ -233,10 +235,7 @@ def hostname2node(host):
 
 def upload_template(filename, destination, context=None, **kwargs):
     kwargs['use_jinja'] = True
-    if 'artemis' in env.name:
-        kwargs['template_dir'] = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'templates/artemis')
-    else:
-        kwargs['template_dir'] = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'templates')
+    kwargs['template_dir'] = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'templates')
     kwargs['context'] = context
     kwargs['use_sudo'] = False
     kwargs['backup'] = False
