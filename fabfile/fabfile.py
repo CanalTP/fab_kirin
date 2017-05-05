@@ -159,7 +159,7 @@ def remove_targeted_images():
     """ Remove several images """
     images_to_remove = run("docker images | grep kirin | awk '{print $3}' && docker images -f dangling=true -q")
     for image in images_to_remove.split('\n'):
-        remove_targeted_image(image)
+        remove_targeted_image(image.strip('\r'))
 
 
 def start_container():
