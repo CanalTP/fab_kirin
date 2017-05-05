@@ -47,5 +47,5 @@ services:
 networks:
   default:
     external:
-      name: docker_network
+      name: {{env.docker_network}}
 {% endif %}
