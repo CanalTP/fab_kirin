@@ -19,6 +19,10 @@ services:
       KIRIN_NAVITIA_TOKEN: {{env.navitia_token}}
       KIRIN_RABBITMQ_CONNECTION_STRING: 'pyamqp://{{env.user_rabbitmq}}:{{env.pwd_rabbitmq}}@{{env.rabbitmq_url}}:5672//?heartbeat=60'
       KIRIN_LOG_FORMAT: '[%(asctime)s] [%(levelname)5s] [%(process)5s] [%(name)25s - kirin_{{env.name}}] %(message)s'
+{% if env.use_syslog %}
+      KIRIN_LOG_FORMATTER: 'json'
+      KIRIN_LOG_EXTRAS: '{"env":"{{env.name}}"}'
+{% endif %}
 
   kirin_background:
     image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
@@ -36,6 +40,10 @@ services:
       KIRIN_NAVITIA_TOKEN: {{env.navitia_token}}
       KIRIN_RABBITMQ_CONNECTION_STRING: 'pyamqp://{{env.user_rabbitmq}}:{{env.pwd_rabbitmq}}@{{env.rabbitmq_url}}:5672//?heartbeat=60'
       KIRIN_LOG_FORMAT: '[%(asctime)s] [%(levelname)5s] [%(process)5s] [%(name)25s - kirin_{{env.name}}] %(message)s'
+{% if env.use_syslog %}
+      KIRIN_LOG_FORMATTER: 'json'
+      KIRIN_LOG_EXTRAS: '{"env":"{{env.name}}"}'
+{% endif %}
 
 networks:
   default:
