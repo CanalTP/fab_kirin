@@ -1,0 +1,24 @@
+version: '2'
+
+services:
+
+  kirin_beat:
+    image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
+    restart: always
+    command: celery beat -A kirin.tasks.celery
+{% if env.use_syslog %}
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "{{env.protocole_syslog}}://{{env.host_syslog}}:{{env.port_syslog}}"
+        syslog-facility: "local7"
+        tag: "kirin-beat"
+{% endif %}
+    env_file: kirin.env
+
+{% if env.docker_network %}
+networks:
+  default:
+    external:
+      name: {{env.docker_network}}
+{% endif %}
