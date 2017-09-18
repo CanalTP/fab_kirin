@@ -154,11 +154,15 @@ def update_kirin():
 @roles('kirin')
 def deploy():
     """ Deploy kirin """
+    if 'kirin-beat' in env.roledefs and len(env.roledefs['kirin-beat']) != 1:
+        print('Error : Only one beat can exist, you provided kirin-beat role to {}'
+              .format(env.roledefs['kirin-beat']))
+        exit(1)
     if env.use_load_balancer:
         node_manager = SafeDeploymentManager()
     else:
         node_manager = NoSafeDeploymentManager()
-    run('rm -f {}/docker-compose.yml'.format(env.path))
+    run('rm -f {}/docker-compose.yml'.format(env.path)) #just to remove deprecated compose
     upload_template('kirin.env', '{}'.format(env.path), context={'env': env})
     upload_template('docker-compose_kirin.yml', '{}'.format(env.path), context={'env': env})
     upload_template('docker-compose_kirin-beat.yml', '{}'.format(env.path), context={'env': env})
