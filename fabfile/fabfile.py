@@ -121,9 +121,7 @@ def deploy_kirin_beat_container_safe(server, node_manager):
         in a safe way if load balancers are available
     """
     with settings(host_string=server):
-        node_manager.disable_node(server)
         restart('docker-compose_kirin-beat.yml')
-        node_manager.enable_node(server)
 
 
 def deploy_container_safe_all(node_manager):
