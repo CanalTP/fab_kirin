@@ -1,0 +1,54 @@
+version: '2'
+
+services:
+  kirin:
+    ports:
+     - "{{env.kirin_port}}:{{env.kirin_port}}"
+    image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
+    restart: always
+{% if env.use_syslog %}
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "{{env.protocole_syslog}}://{{env.host_syslog}}:{{env.port_syslog}}"
+        syslog-facility: "local7"
+        tag: "kirin"
+{% endif %}
+    env_file: kirin.env
+    environment:
+      VIRTUAL_HOST: {{env.kirin_host}}
+
+  kirin_background:
+    image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
+    restart: always
+    command: python ./manage.py load_realtime
+{% if env.use_syslog %}
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "{{env.protocole_syslog}}://{{env.host_syslog}}:{{env.port_syslog}}"
+        syslog-facility: "local7"
+        tag: "kirin-background"
+{% endif %}
+    env_file: kirin.env
+
+  kirin_worker:
+    image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
+    restart: always
+    command: celery worker -P gevent -A kirin.tasks.celery
+{% if env.use_syslog %}
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "{{env.protocole_syslog}}://{{env.host_syslog}}:{{env.port_syslog}}"
+        syslog-facility: "local7"
+        tag: "kirin-worker"
+{% endif %}
+    env_file: kirin.env
+
+{% if env.docker_network %}
+networks:
+  default:
+    external:
+      name: {{env.docker_network}}
+{% endif %}

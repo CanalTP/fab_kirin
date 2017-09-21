@@ -105,15 +105,22 @@ class NoSafeDeploymentManager(DeploymentManager):
         """ Null impl """
 
 
-def deploy_container_safe(server, node_manager):
+def deploy_kirin_container_safe(server, node_manager):
     """ Restart kirin on a specific server,
         in a safe way if load balancers are available
     """
     with settings(host_string=server):
         node_manager.disable_node(server)
-        restart()
+        restart('docker-compose_kirin.yml')
         test_deployment()
         node_manager.enable_node(server)
+
+
+def deploy_kirin_beat_container_safe(server, node_manager):
+    """ Restart kirin on a specific server
+    """
+    with settings(host_string=server):
+        restart('docker-compose_kirin-beat.yml')
 
 
 def deploy_container_safe_all(node_manager):
@@ -121,7 +128,11 @@ def deploy_container_safe_all(node_manager):
     in a safe way if load balancers are available
     """
     for server in env.roledefs['kirin']:
-        execute(deploy_container_safe, server, node_manager)
+        execute(deploy_kirin_container_safe, server, node_manager)
+        # need to wait between both node execution because using same token
+        time.sleep(5)
+    for server in env.roledefs['kirin-beat']:
+        execute(deploy_kirin_beat_container_safe, server, node_manager)
         # need to wait between both node execution because using same token
         time.sleep(5)
 
@@ -140,11 +151,18 @@ def update_kirin():
 @roles('kirin')
 def deploy():
     """ Deploy kirin """
+    if 'kirin-beat' in env.roledefs and len(env.roledefs['kirin-beat']) != 1:
+        print('Error : Only one beat can exist, you provided kirin-beat role to {}'
+              .format(env.roledefs['kirin-beat']))
+        exit(1)
     if env.use_load_balancer:
         node_manager = SafeDeploymentManager()
     else:
         node_manager = NoSafeDeploymentManager()
-    upload_template('docker-compose.yml', '{}'.format(env.path), context={'env': env})
+    run('rm -f {}/docker-compose.yml'.format(env.path)) #just to remove deprecated compose
+    upload_template('kirin.env', '{}'.format(env.path), context={'env': env})
+    upload_template('docker-compose_kirin.yml', '{}'.format(env.path), context={'env': env})
+    upload_template('docker-compose_kirin-beat.yml', '{}'.format(env.path), context={'env': env})
     update_kirin()
     deploy_container_safe_all(node_manager)
 
@@ -162,29 +180,29 @@ def remove_targeted_images():
         remove_targeted_image(image.strip('\r'))
 
 
-def start_container():
+def start_container(compose_file):
     """ Start targeted containers in daemon mode and restart them if crash """
-    run('docker-compose up --force-recreate -d')
+    run('docker-compose -f {} up --force-recreate -d'.format(compose_file))
 
 
-def stop_container():
+def stop_container(compose_file):
     """ Stop targeted containers """
-    run('docker-compose stop')
+    run('docker-compose -f {} stop'.format(compose_file))
 
 
-def remove_container():
+def remove_container(compose_file):
     """ Remove targeted containers without asking confirmation and
     remove volumes associated with containers
     """
-    run('docker-compose rm -v -f')
+    run('docker-compose -f {} rm -v -f'.format(compose_file))
 
 
-def restart():
+def restart(compose_file):
     """ Restart containers properly """
-    stop_container()
-    remove_container()
+    stop_container(compose_file)
+    remove_container(compose_file)
     remove_targeted_images()
-    start_container()
+    start_container(compose_file)
 
 
 def test_deployment():
