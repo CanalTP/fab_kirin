@@ -117,8 +117,7 @@ def deploy_kirin_container_safe(server, node_manager):
 
 
 def deploy_kirin_beat_container_safe(server, node_manager):
-    """ Restart kirin on a specific server,
-        in a safe way if load balancers are available
+    """ Restart kirin on a specific server
     """
     with settings(host_string=server):
         restart('docker-compose_kirin-beat.yml')
