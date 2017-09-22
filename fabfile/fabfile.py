@@ -216,7 +216,6 @@ def test_deployment():
             print('waiting to check status ...')
         except Exception as e:
             print("Error : {}".format(e))
-            exit(1)
 
         return response.status_code
     request = 'http://{}/status'.format(env.kirin_host)
