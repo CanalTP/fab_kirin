@@ -17,7 +17,7 @@ services:
     env_file: kirin.env
     environment:
       VIRTUAL_HOST: {{env.kirin_host}}
-      KIRIN_USE_GEVENT: True
+      KIRIN_USE_GEVENT: true
 
   kirin_background:
     image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
@@ -33,7 +33,7 @@ services:
 {% endif %}
     env_file: kirin.env
     environment:
-      KIRIN_USE_GEVENT: True
+      KIRIN_USE_GEVENT: true
 
   kirin_worker:
     image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
