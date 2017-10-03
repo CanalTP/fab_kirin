@@ -17,6 +17,7 @@ services:
     env_file: kirin.env
     environment:
       VIRTUAL_HOST: {{env.kirin_host}}
+      KIRIN_USE_GEVENT: True
 
   kirin_background:
     image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
@@ -31,11 +32,13 @@ services:
         tag: "kirin-background"
 {% endif %}
     env_file: kirin.env
+    environment:
+      KIRIN_USE_GEVENT: True
 
   kirin_worker:
     image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
     restart: always
-    command: celery worker -P gevent -A kirin.tasks.celery
+    command: celery worker -A kirin.tasks.celery --concurrency=3
 {% if env.use_syslog %}
     logging:
       driver: "syslog"
