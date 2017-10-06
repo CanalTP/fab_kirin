@@ -38,7 +38,7 @@ services:
   kirin_worker:
     image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
     restart: always
-    command: celery worker -A kirin.tasks.celery --concurrency=1
+    command: celery worker -A kirin.tasks.celery --concurrency=3
 {% if env.use_syslog %}
     logging:
       driver: "syslog"
