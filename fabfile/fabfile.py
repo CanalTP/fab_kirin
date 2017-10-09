@@ -218,10 +218,10 @@ def test_deployment():
             print("Error : {}".format(e))
 
         return response.status_code
-    request = 'http://{}/status'.format(env.kirin_host)
+    request = 'http://localhost:9090/status'
 
     try:
-        Retrying(stop_max_delay=30000,
+        Retrying(stop_max_delay=5000,
                  wait_fixed=100,
                  retry_on_result=lambda status: check_status(request) != 200)\
             .call(check_status, request)
