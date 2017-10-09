@@ -221,7 +221,7 @@ def test_deployment():
     request = 'http://{}/status'.format(env.kirin_host)
 
     try:
-        Retrying(stop_max_delay=5000,
+        Retrying(stop_max_delay=30000,
                  wait_fixed=100,
                  retry_on_result=lambda status: check_status(request) != 200)\
             .call(check_status, request)
