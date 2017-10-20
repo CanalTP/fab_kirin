@@ -111,6 +111,7 @@ def deploy_kirin_container_safe(server, node_manager):
     """
     with settings(host_string=server):
         node_manager.disable_node(server)
+        migrate('docker-compose_kirin.yml')
         restart('docker-compose_kirin.yml')
         test_deployment()
         node_manager.enable_node(server)
@@ -195,6 +196,10 @@ def remove_container(compose_file):
     remove volumes associated with containers
     """
     run('docker-compose -f {} rm -v -f'.format(compose_file))
+
+
+def migrate(compose_file, revision='head'):
+    run('docker-compose -f {} run --rm --no-deps kirin ./manage.py db upgrade {}'.format(compose_file, revision))
 
 
 def restart(compose_file):
