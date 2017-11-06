@@ -174,7 +174,9 @@ def deploy_kirin():
 
     upload_template('kirin.env', '{}'.format(env.path), context={'env': env})
     upload_template('docker-compose_kirin.yml', '{}'.format(env.path), context={'env': env})
-
+    upload_template('docker-compose_kirin-beat.yml', '{}'.format(env.path), context={'env': env})
+    if env.new_relic_key:
+        upload_template('newrelic.ini', '{}'.format(env.path), context={'env': env})
     update_kirin()
 
     deploy_kirin_container_safe(env.host_string, node_manager)
