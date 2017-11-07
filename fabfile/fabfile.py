@@ -53,7 +53,7 @@ class SafeDeploymentManager(DeploymentManager):
 
     HTTP_HEADER = {'Content-Type': 'application/json',
                    'Accept': 'application/json',
-                   'X-Rundeck-Auth-Token': env.rundeck_token}
+                   'X-Rundeck-Auth-Token': env.get('rundeck_token', None)}
 
     def enable_node(self, node):
         node = hostname2node(node)
@@ -134,8 +134,8 @@ def deploy():
     """
     Deploy Kirin services
     """
-    deploy_kirin()
-    deploy_kirin_beat()
+    execute(deploy_kirin)
+    execute(deploy_kirin_beat)
 
 
 @task()
