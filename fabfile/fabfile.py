@@ -51,9 +51,11 @@ class SafeDeploymentManager(DeploymentManager):
     # Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/security.html
     requests.packages.urllib3.disable_warnings()
 
-    HTTP_HEADER = {'Content-Type': 'application/json',
-                   'Accept': 'application/json',
-                   'X-Rundeck-Auth-Token': env.get('rundeck_token', None)}
+    def __init__(self):
+        super().__init__()
+        self.http_header = {'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Rundeck-Auth-Token': env.rundeck_token}
 
     def enable_node(self, node):
         node = hostname2node(node)
@@ -63,14 +65,14 @@ class SafeDeploymentManager(DeploymentManager):
 
         switch_power_on = requests.post("{}/api/18/job/{}/run"
                                         .format(env.rundeck_url, env.rundeck_job, node),
-                                        headers=self.HTTP_HEADER, data=json.dumps(args), verify=False)
+                                        headers=self.http_header, data=json.dumps(args), verify=False)
         response = switch_power_on.json()
 
         request = '{}/api/18/execution/{}/state?{}'.format(env.rundeck_url, response['id'], env.rundeck_job)
 
         try:
             Retrying(stop_max_delay=60000, wait_fixed=500,
-                     retry_on_result=lambda status: check_node(request, self.HTTP_HEADER).json()
+                     retry_on_result=lambda status: check_node(request, self.http_header).json()
                      .get('executionState') != 'SUCCEEDED').call(check_node, request)
         except Exception as e:
             abort("The {} node cannot be enabled:\n{}".format(node, e))
@@ -85,14 +87,14 @@ class SafeDeploymentManager(DeploymentManager):
 
         switch_power_off = requests.post("{}/api/18/job/{}/run"
                                          .format(env.rundeck_url, env.rundeck_job, node),
-                                         headers=self.HTTP_HEADER, data=json.dumps(args), verify=False)
+                                         headers=self.http_header, data=json.dumps(args), verify=False)
         response = switch_power_off.json()
 
         request = '{}/api/18/execution/{}/state?{}'.format(env.rundeck_url, response['id'], env.rundeck_job)
 
         try:
             Retrying(stop_max_delay=60000, wait_fixed=500,
-                     retry_on_result=lambda status: check_node(request, self.HTTP_HEADER).json()
+                     retry_on_result=lambda status: check_node(request, self.http_header).json()
                      .get('executionState') != 'SUCCEEDED').call(check_node, request)
         except Exception as e:
             abort("The {} node cannot be disabled:\n{}".format(node, e))
