@@ -9,10 +9,6 @@ from retrying import Retrying
 from fabric.contrib.files import upload_template as _upload_template
 import os
 
-HTTP_HEADER = {'Content-Type': 'application/json',
-               'Accept': 'application/json',
-               'X-Rundeck-Auth-Token': env.rundeck_token}
-
 
 class DeploymentManager(object):
     @abc.abstractmethod
@@ -55,6 +51,10 @@ class SafeDeploymentManager(DeploymentManager):
     # Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/security.html
     requests.packages.urllib3.disable_warnings()
 
+    HTTP_HEADER = {'Content-Type': 'application/json',
+                   'Accept': 'application/json',
+                   'X-Rundeck-Auth-Token': env.rundeck_token}
+
     def enable_node(self, node):
         node = hostname2node(node)
         print("The {} node will be enabled".format(node))
@@ -63,14 +63,14 @@ class SafeDeploymentManager(DeploymentManager):
 
         switch_power_on = requests.post("{}/api/18/job/{}/run"
                                         .format(env.rundeck_url, env.rundeck_job, node),
-                                        headers=HTTP_HEADER, data=json.dumps(args), verify=False)
+                                        headers=self.HTTP_HEADER, data=json.dumps(args), verify=False)
         response = switch_power_on.json()
 
         request = '{}/api/18/execution/{}/state?{}'.format(env.rundeck_url, response['id'], env.rundeck_job)
 
         try:
             Retrying(stop_max_delay=60000, wait_fixed=500,
-                     retry_on_result=lambda status: check_node(request, HTTP_HEADER).json()
+                     retry_on_result=lambda status: check_node(request, self.HTTP_HEADER).json()
                      .get('executionState') != 'SUCCEEDED').call(check_node, request)
         except Exception as e:
             abort("The {} node cannot be enabled:\n{}".format(node, e))
@@ -85,14 +85,14 @@ class SafeDeploymentManager(DeploymentManager):
 
         switch_power_off = requests.post("{}/api/18/job/{}/run"
                                          .format(env.rundeck_url, env.rundeck_job, node),
-                                         headers=HTTP_HEADER, data=json.dumps(args), verify=False)
+                                         headers=self.HTTP_HEADER, data=json.dumps(args), verify=False)
         response = switch_power_off.json()
 
         request = '{}/api/18/execution/{}/state?{}'.format(env.rundeck_url, response['id'], env.rundeck_job)
 
         try:
             Retrying(stop_max_delay=60000, wait_fixed=500,
-                     retry_on_result=lambda status: check_node(request, HTTP_HEADER).json()
+                     retry_on_result=lambda status: check_node(request, self.HTTP_HEADER).json()
                      .get('executionState') != 'SUCCEEDED').call(check_node, request)
         except Exception as e:
             abort("The {} node cannot be disabled:\n{}".format(node, e))
@@ -151,6 +151,10 @@ def deploy_kirin_beat():
     upload_template('kirin.env', '{}'.format(env.path), context={'env': env})
     upload_template('docker-compose_kirin-beat.yml', '{}'.format(env.path), context={'env': env})
 
+    # Deploy NewRelic
+    if env.new_relic_key:
+        upload_template('newrelic.ini', '{}'.format(env.path), context={'env': env})
+
     update_kirin()
 
     deploy_kirin_beat_container_safe(env.host_string)
@@ -174,7 +178,8 @@ def deploy_kirin():
 
     upload_template('kirin.env', '{}'.format(env.path), context={'env': env})
     upload_template('docker-compose_kirin.yml', '{}'.format(env.path), context={'env': env})
-    upload_template('docker-compose_kirin-beat.yml', '{}'.format(env.path), context={'env': env})
+
+    # Deploy NewRelic
     if env.new_relic_key:
         upload_template('newrelic.ini', '{}'.format(env.path), context={'env': env})
     update_kirin()
