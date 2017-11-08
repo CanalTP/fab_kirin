@@ -8,10 +8,7 @@ import time
 from retrying import Retrying
 from fabric.contrib.files import upload_template as _upload_template
 import os
-from jinja2 import Environment, FileSystemLoader
 
-
-env.use_syslog = True
 
 class DeploymentManager(object):
     @abc.abstractmethod
@@ -23,86 +20,86 @@ class DeploymentManager(object):
         pass
 
 
-class SafeDeploymentManager(DeploymentManager):
-    # avoid the message output : InsecureRequestWarning: Unverified HTTPS request is being made.
-    # Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/security.html
-    requests.packages.urllib3.disable_warnings()
-
-    def enable_node(self, node):
-        node = hostname2node(node)
-        print("The {} node will be enabled".format(node))
-        header = {'X-Rundeck-Auth-Token': env.rundeck_token, 'Content-Type': 'application/json', 'Accept': 'application/json'}
-        args = {'argString': '-nodename {} -state enable'.format(node)}
-
-        switch_power_on = requests.post("{}/api/18/job/{}/run"
-                                        .format(env.rundeck_url, env.rundeck_job, node),
-                                        headers=header, data=json.dumps(args), verify=False)
-        response = switch_power_on.json()
-
-        def check_node(query):
-            """
-            poll on state of execution until it gets a 'succeded' status
-            """
-            try:
-                response = requests.get(query, headers=header, verify=False)
-                print('waiting for enable node ...')
-            except Exception as e:
-                print("Error : {}".format(e))
-                exit(1)
-
-            return response.json()
-        request = '{}/api/18/execution/{}/state?{}'.format(env.rundeck_url, response['id'], env.rundeck_job)
-
-        try:
-            Retrying(stop_max_delay=60000, wait_fixed=500,
-                     retry_on_result=lambda status: check_node(request).get('executionState') != 'SUCCEEDED')\
-                .call(check_node, request)
-        except:
-            abort("The {} node cannot be enabled.".format(node))
-
-        print("The {} node is enabled".format(node))
-
-    def disable_node(self, node):
-        node = hostname2node(node)
-        print("The {} node will be disabled".format(node))
-        header = {'X-Rundeck-Auth-Token': env.rundeck_token, 'Content-Type': 'application/json', 'Accept': 'application/json'}
-        args = {'argString': '-nodename {} -state disable'.format(node)}
-
-        switch_power_off = requests.post("{}/api/18/job/{}/run"
-                                         .format(env.rundeck_url, env.rundeck_job, node),
-                                         headers=header, data=json.dumps(args), verify=False)
-        response = switch_power_off.json()
-
-        def check_node(query):
-            """
-            poll on state of execution until it gets a 'succeded' status
-            """
-            try:
-                response = requests.get(query, headers=header, verify=False)
-                print('waiting for disable node ...')
-            except Exception as e:
-                print("Error : {}".format(e))
-                exit(1)
-
-            return response.json()
-        request = '{}/api/18/execution/{}/state?{}'.format(env.rundeck_url, response['id'], env.rundeck_job)
-
-        try:
-            Retrying(stop_max_delay=60000, wait_fixed=500,
-                     retry_on_result=lambda status: check_node(request).get('executionState') != 'SUCCEEDED')\
-                .call(check_node, request)
-        except:
-            abort("The {} node cannot be disabled.".format(node))
-
-        print("The {} node is disabled".format(node))
-
-
 class NoSafeDeploymentManager(DeploymentManager):
     def enable_node(self, node):
         """ Null impl """
 
     def disable_node(self, node):
         """ Null impl """
+
+
+def check_node(query, header=None):
+    """
+    poll on state of execution until it gets a 'succeeded' status
+    """
+    response = None
+    try:
+        if header:
+            response = requests.get(query, headers=header, verify=False)
+        else:
+            response = requests.get(query)
+        print('waiting for enable node ...')
+    except Exception as e:
+        print("Error : {}".format(e))
+
+    # Return full response
+    return response
+
+
+class SafeDeploymentManager(DeploymentManager):
+    # avoid the message output : InsecureRequestWarning: Unverified HTTPS request is being made.
+    # Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/security.html
+    requests.packages.urllib3.disable_warnings()
+
+    def __init__(self):
+        super(SafeDeploymentManager, self).__init__()
+        self.http_header = {'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Rundeck-Auth-Token': env.rundeck_token}
+
+    def enable_node(self, node):
+        node = hostname2node(node)
+        print("The {} node will be enabled".format(node))
+
+        args = {'argString': '-nodename {} -state enable'.format(node)}
+
+        switch_power_on = requests.post("{}/api/18/job/{}/run"
+                                        .format(env.rundeck_url, env.rundeck_job, node),
+                                        headers=self.http_header, data=json.dumps(args), verify=False)
+        response = switch_power_on.json()
+
+        request = '{}/api/18/execution/{}/state?{}'.format(env.rundeck_url, response['id'], env.rundeck_job)
+
+        try:
+            Retrying(stop_max_delay=60000, wait_fixed=500,
+                     retry_on_result=lambda status: check_node(request, self.http_header).json()
+                     .get('executionState') != 'SUCCEEDED').call(check_node, request)
+        except Exception as e:
+            abort("The {} node cannot be enabled:\n{}".format(node, e))
+
+        print("The {} node is enabled".format(node))
+
+    def disable_node(self, node):
+        node = hostname2node(node)
+        print("The {} node will be disabled".format(node))
+
+        args = {'argString': '-nodename {} -state disable'.format(node)}
+
+        switch_power_off = requests.post("{}/api/18/job/{}/run"
+                                         .format(env.rundeck_url, env.rundeck_job, node),
+                                         headers=self.http_header, data=json.dumps(args), verify=False)
+        response = switch_power_off.json()
+
+        request = '{}/api/18/execution/{}/state?{}'.format(env.rundeck_url, response['id'], env.rundeck_job)
+
+        try:
+            Retrying(stop_max_delay=60000, wait_fixed=500,
+                     retry_on_result=lambda status: check_node(request, self.http_header).json()
+                     .get('executionState') != 'SUCCEEDED').call(check_node, request)
+        except Exception as e:
+            abort("The {} node cannot be disabled:\n{}".format(node, e))
+
+        print("The {} node is disabled".format(node))
 
 
 def deploy_kirin_container_safe(server, node_manager):
@@ -117,25 +114,11 @@ def deploy_kirin_container_safe(server, node_manager):
         node_manager.enable_node(server)
 
 
-def deploy_kirin_beat_container_safe(server, node_manager):
+def deploy_kirin_beat_container_safe(server):
     """ Restart kirin on a specific server
     """
     with settings(host_string=server):
         restart('docker-compose_kirin-beat.yml')
-
-
-def deploy_container_safe_all(node_manager):
-    """ Restart kirin on all servers,
-    in a safe way if load balancers are available
-    """
-    for server in env.roledefs['kirin']:
-        execute(deploy_kirin_container_safe, server, node_manager)
-        # need to wait between both node execution because using same token
-        time.sleep(5)
-    for server in env.roledefs['kirin-beat']:
-        execute(deploy_kirin_beat_container_safe, server, node_manager)
-        # need to wait between both node execution because using same token
-        time.sleep(5)
 
 
 def update_kirin():
@@ -149,25 +132,64 @@ def update_kirin():
 
 
 @task
-@roles('kirin')
 def deploy():
-    """ Deploy kirin """
-    if 'kirin-beat' in env.roledefs and len(env.roledefs['kirin-beat']) != 1:
-        print('Error : Only one beat can exist, you provided kirin-beat role to {}'
-              .format(env.roledefs['kirin-beat']))
-        exit(1)
+    """
+    Deploy Kirin services
+    """
+    execute(deploy_kirin)
+    execute(deploy_kirin_beat)
+
+
+@task()
+@roles('kirin-beat')
+def deploy_kirin_beat():
+    """
+    Deploy Kirin beat
+    :return:
+    """
+    if len(env.roledefs['kirin-beat']) != 1:
+        abort('Error : Only one beat can exist, you provided kirin-beat role on {}'.format(env.roledefs['kirin-beat']))
+
+    upload_template('kirin.env', '{}'.format(env.path), context={'env': env})
+    upload_template('docker-compose_kirin-beat.yml', '{}'.format(env.path), context={'env': env})
+
+    # Deploy NewRelic
+    if env.new_relic_key:
+        upload_template('newrelic.ini', '{}'.format(env.path), context={'env': env})
+
+    update_kirin()
+
+    deploy_kirin_beat_container_safe(env.host_string)
+
+    # need to wait between both node execution because using same token
+    time.sleep(5)
+
+
+@task()
+@roles('kirin')
+def deploy_kirin():
+    """
+    Deploy Kirin
+    :return:
+    """
+
     if env.use_load_balancer:
         node_manager = SafeDeploymentManager()
     else:
         node_manager = NoSafeDeploymentManager()
-    run('rm -f {}/docker-compose.yml'.format(env.path)) #just to remove deprecated compose
+
     upload_template('kirin.env', '{}'.format(env.path), context={'env': env})
     upload_template('docker-compose_kirin.yml', '{}'.format(env.path), context={'env': env})
-    upload_template('docker-compose_kirin-beat.yml', '{}'.format(env.path), context={'env': env})
+
+    # Deploy NewRelic
     if env.new_relic_key:
         upload_template('newrelic.ini', '{}'.format(env.path), context={'env': env})
     update_kirin()
-    deploy_container_safe_all(node_manager)
+
+    deploy_kirin_container_safe(env.host_string, node_manager)
+
+    # need to wait between both node execution because using same token
+    time.sleep(5)
 
 
 def remove_targeted_image(id_image):
@@ -214,24 +236,15 @@ def restart(compose_file):
 
 def test_deployment():
     """ Verify api kirin is OK """
-    def check_status(query):
-        """
-        poll on state of execution until it gets a 'OK' status
-        """
-        try:
-            response = requests.get(query)
-            print('waiting to check status ...')
-        except Exception as e:
-            print("Error : {}".format(e))
 
-        return response.status_code
-    request = 'http://{}/status'.format(env.kirin_host)
+    header = {'Host': env.kirin_host}
+    request = 'http://{}/status'.format(env.host_string)
 
     try:
         Retrying(stop_max_delay=30000,
                  wait_fixed=100,
-                 retry_on_result=lambda status: check_status(request) != 200)\
-            .call(check_status, request)
+                 retry_on_result=lambda status: check_node(request, header).status_code != 200)\
+            .call(check_node, request)
     except Exception as e:
         abort(e)
     print("{} is OK".format(request))
