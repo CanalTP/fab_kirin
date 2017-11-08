@@ -52,7 +52,7 @@ class SafeDeploymentManager(DeploymentManager):
     requests.packages.urllib3.disable_warnings()
 
     def __init__(self):
-        super().__init__()
+        super(SafeDeploymentManager, self).__init__()
         self.http_header = {'Content-Type': 'application/json',
                             'Accept': 'application/json',
                             'X-Rundeck-Auth-Token': env.rundeck_token}
