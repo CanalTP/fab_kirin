@@ -72,8 +72,8 @@ class SafeDeploymentManager(DeploymentManager):
 
         try:
             Retrying(stop_max_delay=60000, wait_fixed=500,
-                     retry_on_result=lambda status: check_node(request, self.http_header).json()
-                     .get('executionState') != 'SUCCEEDED').call(check_node, request)
+                     retry_on_result=lambda resp: resp.json().get('executionState') != 'SUCCEEDED')\
+                .call(check_node, request, self.http_header)
         except Exception as e:
             abort("The {} node cannot be enabled:\n{}".format(node, e))
 
@@ -94,8 +94,8 @@ class SafeDeploymentManager(DeploymentManager):
 
         try:
             Retrying(stop_max_delay=60000, wait_fixed=500,
-                     retry_on_result=lambda status: check_node(request, self.http_header).json()
-                     .get('executionState') != 'SUCCEEDED').call(check_node, request)
+                     retry_on_result=lambda resp: resp.json().get('executionState') != 'SUCCEEDED')\
+                .call(check_node, request, self.http_header)
         except Exception as e:
             abort("The {} node cannot be disabled:\n{}".format(node, e))
 
@@ -243,8 +243,8 @@ def test_deployment():
     try:
         Retrying(stop_max_delay=30000,
                  wait_fixed=100,
-                 retry_on_result=lambda status: check_node(request, header).status_code != 200)\
-            .call(check_node, request)
+                 retry_on_result=lambda resp: resp is None or resp.status_code != 200)\
+            .call(check_node, request, header)
     except Exception as e:
         abort(e)
     print("{} is OK".format(request))
