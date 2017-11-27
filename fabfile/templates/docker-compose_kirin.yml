@@ -18,6 +18,10 @@ services:
     environment:
       VIRTUAL_HOST: {{env.kirin_host}}
       KIRIN_USE_GEVENT: 'true'
+{% if env.new_relic_key %}
+    volumes:
+        - {{env.path}}/newrelic.ini:/usr/src/app/newrelic.ini
+{% endif %}
 
   kirin_background:
     image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
@@ -34,6 +38,10 @@ services:
     env_file: kirin.env
     environment:
       KIRIN_USE_GEVENT: 'true'
+{% if env.new_relic_key %}
+    volumes:
+        - {{env.path}}/newrelic.ini:/usr/src/app/newrelic.ini
+{% endif %}
 
   kirin_worker:
     image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
@@ -48,6 +56,10 @@ services:
         tag: "kirin-worker"
 {% endif %}
     env_file: kirin.env
+{% if env.new_relic_key %}
+    volumes:
+        - {{env.path}}/newrelic.ini:/usr/src/app/newrelic.ini
+{% endif %}
 
 {% if env.docker_network %}
 networks:
