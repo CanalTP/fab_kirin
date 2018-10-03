@@ -38,4 +38,16 @@ def prod():
     env.celery_broker_url = 'pyamqp://<user>:<mdp>@<platform>:<port>/<vhost>?heartbeat=60' #beware to open access to vhost for user in rabbitmq (for beat-worker communication)
 
     env.use_logger = True
+
+    env.cots_par_iv_api_key = '<cots-api-key>'
+    env.cots_par_iv_motif_resource_server = '<ParIV-motif-url>'
+    env.cots_par_iv_token_server = '<ParIV-token-url>'
+    env.cots_par_iv_client_id = '<ParIV-username'
+    env.cots_par_iv_client_secret = '<ParIV-password>'
+
+    env.cots_par_iv_circuit_breaker_max_fail = 4
+    env.cots_par_iv_circuit_breaker_timeout_s = 60
+    env.cots_par_iv_timeout_token = 30*60
+    env.cots_par_iv_cache_timeout = 60*60
+    env.cots_par_iv_request_timeout = 2
 ```
