@@ -138,8 +138,23 @@ def deploy():
     """
     Deploy Kirin services
     """
+    print_status()
     execute(deploy_kirin)
     execute(deploy_kirin_beat)
+    print_status()
+
+
+def print_status():
+
+    request = 'http://{}/status'.format(env.kirin_host)
+    resp = check_node(request)
+    print("")
+    print("curl {}".format(request))
+    if resp:
+        print(resp.json())
+    else:
+        print("[unavailable]")
+    print("")
 
 
 @task()
