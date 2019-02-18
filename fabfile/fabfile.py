@@ -146,15 +146,24 @@ def deploy():
 
 def print_status():
 
+    def check_and_print_response(query, header=None):
+        response = check_node(query, header)
+        if response is None or response.status_code != 200:
+            return False
+        else:
+            print("")
+            print("curl {}".format(query))
+            print(response.json())
+            print("")
+            return True
+
     request = 'http://{}/status'.format(env.kirin_host)
-    resp = check_node(request)
-    print("")
-    print("curl {}".format(request))
-    if resp:
-        print(resp.json())
-    else:
-        print("[unavailable]")
-    print("")
+    try:
+        Retrying(stop_max_delay=30000, wait_fixed=100,
+                 retry_on_result=lambda res: not res)\
+            .call(check_and_print_response, request)
+    except Exception as e:
+        abort(e)
 
 
 @task()
