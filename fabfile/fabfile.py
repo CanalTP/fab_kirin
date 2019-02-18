@@ -28,16 +28,16 @@ class NoSafeDeploymentManager(DeploymentManager):
         """ Null impl """
 
 
-def check_node(query, header=None):
+def check_node(query, headers=None):
     """
     poll on state of execution until it gets a 'succeeded' status
     """
     response = None
     try:
-        if header:
-            response = requests.get(query, headers=header, verify=False)
+        if headers:
+            response = requests.get(query, headers=headers, verify=False)
         else:
-            response = requests.get(query)
+            response = requests.get(query, verify=False)
         print('waiting for enable node ...')
     except Exception as e:
         print("Error : {}".format(e))
@@ -263,13 +263,13 @@ def restart(compose_file):
 def test_deployment():
     """ Verify api kirin is OK """
 
-    header = {'Host': env.kirin_host}
+    headers = {'Host': env.kirin_host}
     request = 'http://{}/status'.format(env.host_string)
 
     try:
         Retrying(stop_max_delay=30000, wait_fixed=100,
                  retry_on_result=lambda resp: resp is None or resp.status_code != 200)\
-            .call(check_node, request, header)
+            .call(check_node, request, headers)
     except Exception as e:
         abort(e)
     print("{} is OK".format(request))
