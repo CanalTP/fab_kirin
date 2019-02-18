@@ -28,16 +28,16 @@ class NoSafeDeploymentManager(DeploymentManager):
         """ Null impl """
 
 
-def check_node(query, header=None):
+def check_node(query, headers=None):
     """
     poll on state of execution until it gets a 'succeeded' status
     """
     response = None
     try:
-        if header:
-            response = requests.get(query, headers=header, verify=False)
+        if headers:
+            response = requests.get(query, headers=headers, verify=False)
         else:
-            response = requests.get(query)
+            response = requests.get(query, verify=False)
         print('waiting for enable node ...')
     except Exception as e:
         print("Error : {}".format(e))
@@ -138,8 +138,32 @@ def deploy():
     """
     Deploy Kirin services
     """
+    print_status()
     execute(deploy_kirin)
     execute(deploy_kirin_beat)
+    print_status()
+
+
+def print_status():
+
+    def check_and_print_response(query, header=None):
+        response = check_node(query, header)
+        if response is None or response.status_code != 200:
+            return False
+        else:
+            print("")
+            print("curl {}".format(query))
+            print(response.json())
+            print("")
+            return True
+
+    request = 'http://{}/status'.format(env.kirin_host)
+    try:
+        Retrying(stop_max_delay=30000, wait_fixed=100,
+                 retry_on_result=lambda res: not res)\
+            .call(check_and_print_response, request)
+    except Exception as e:
+        abort(e)
 
 
 @task()
@@ -239,13 +263,13 @@ def restart(compose_file):
 def test_deployment():
     """ Verify api kirin is OK """
 
-    header = {'Host': env.kirin_host}
+    headers = {'Host': env.kirin_host}
     request = 'http://{}/status'.format(env.host_string)
 
     try:
         Retrying(stop_max_delay=30000, wait_fixed=100,
                  retry_on_result=lambda resp: resp is None or resp.status_code != 200)\
-            .call(check_node, request, header)
+            .call(check_node, request, headers)
     except Exception as e:
         abort(e)
     print("{} is OK".format(request))
