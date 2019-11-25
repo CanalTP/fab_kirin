@@ -3,7 +3,7 @@ version: '2'
 services:
   kirin:
     ports:
-     - "{{env.kirin_port}}:{{env.kirin_port}}"
+     - "{{env.kirin_host_port}}:{{env.kirin_docker_port}}"
     image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
     restart: always
 {% if env.use_syslog %}
