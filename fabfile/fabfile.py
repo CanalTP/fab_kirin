@@ -123,22 +123,18 @@ def deploy_kirin_beat_container_safe(server):
         restart('docker-compose_kirin-beat.yml')
 
 
-def _new_image_pull_command():
-    return 'docker pull {image}:{prev_tag}'.format(image=env.docker_image_kirin, prev_tag=env.previous_docker_tag)
-
-
 def pull_kirin_image():
     """
     Retrieve new kirin image
     """
-    run(_new_image_pull_command())
+    run('docker pull {image}:{new_tag}'.format(image=env.docker_image_kirin, new_tag=env.current_docker_tag))
 
 
 def update_kirin_docker_tag():
     """
     To tag the image, we pull the previous tag, tag it as our own and push it
     """
-    local(_new_image_pull_command())
+    local('docker pull {image}:{prev_tag}'.format(image=env.docker_image_kirin, prev_tag=env.previous_docker_tag))
     local('docker tag {image}:{prev_tag} {image}:{new_tag}'
         .format(image=env.docker_image_kirin, prev_tag=env.previous_docker_tag, new_tag=env.current_docker_tag))
     local('docker push {image}:{new_tag}'.format(image=env.docker_image_kirin, new_tag=env.current_docker_tag))
@@ -150,10 +146,10 @@ def deploy():
     Deploy Kirin services
     """
     print_status()
+    update_kirin_docker_tag()
     execute(deploy_kirin)
     execute(deploy_kirin_beat)
     print_status()
-    update_kirin_docker_tag()
 
 
 def print_status():
