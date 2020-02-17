@@ -123,11 +123,22 @@ def deploy_kirin_beat_container_safe(server):
         restart('docker-compose_kirin-beat.yml')
 
 
+def _new_image_pull_command():
+    return 'docker pull {image}:{prev_tag}'.format(image=env.docker_image_kirin, prev_tag=env.previous_docker_tag)
+
+
+def pull_kirin_image():
+    """
+    Retrieve new kirin image
+    """
+    run(_new_image_pull_command())
+
+
 def update_kirin_docker_tag():
-    """ Retrieve new kirin image
+    """
     To tag the image, we pull the previous tag, tag it as our own and push it
     """
-    local('docker pull {image}:{prev_tag}'.format(image=env.docker_image_kirin, prev_tag=env.previous_docker_tag))
+    local(_new_image_pull_command())
     local('docker tag {image}:{prev_tag} {image}:{new_tag}'
         .format(image=env.docker_image_kirin, prev_tag=env.previous_docker_tag, new_tag=env.current_docker_tag))
     local('docker push {image}:{new_tag}'.format(image=env.docker_image_kirin, new_tag=env.current_docker_tag))
@@ -184,6 +195,8 @@ def deploy_kirin_beat():
     if env.new_relic_key:
         upload_template('newrelic.ini', '{}'.format(env.path), context={'env': env})
 
+    pull_kirin_image()
+
     deploy_kirin_beat_container_safe(env.host_string)
 
     # need to wait between both node execution because using same token
@@ -209,6 +222,8 @@ def deploy_kirin():
     # Deploy NewRelic
     if env.new_relic_key:
         upload_template('newrelic.ini', '{}'.format(env.path), context={'env': env})
+
+    pull_kirin_image()
 
     deploy_kirin_container_safe(env.host_string, node_manager)
 
