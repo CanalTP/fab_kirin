@@ -28,6 +28,12 @@ class NoSafeDeploymentManager(DeploymentManager):
         """ Null impl """
 
 
+def convert2bool(v):
+    if isinstance(v, bool):
+        return v
+    return str(v).lower() in ("yes", "y", "true", "t", "1")
+
+
 def check_node(query, headers=None):
     """
     poll on state of execution until it gets a 'succeeded' status
@@ -104,23 +110,23 @@ class SafeDeploymentManager(DeploymentManager):
         print("The {} node is disabled".format(node))
 
 
-def deploy_kirin_container_safe(server, node_manager):
+def deploy_kirin_container_safe(server, node_manager, first_time=False):
     """ Restart kirin on a specific server,
         in a safe way if load balancers are available
     """
     with settings(host_string=server):
         node_manager.disable_node(server)
         migrate('docker-compose_kirin.yml')
-        restart('docker-compose_kirin.yml')
+        restart('docker-compose_kirin.yml', first_time=first_time)
         test_deployment()
         node_manager.enable_node(server)
 
 
-def deploy_kirin_beat_container_safe(server):
+def deploy_kirin_beat_container_safe(server, first_time=False):
     """ Restart kirin on a specific server
     """
     with settings(host_string=server):
-        restart('docker-compose_kirin-beat.yml')
+        restart('docker-compose_kirin-beat.yml', first_time=first_time)
 
 
 def pull_kirin_image():
@@ -141,14 +147,17 @@ def update_kirin_docker_tag():
 
 
 @task
-def deploy():
+def deploy(first_time=False):
     """
     Deploy Kirin services
     """
-    print_status()
+    first_time = convert2bool(first_time)
+    # Unless platform is empty, display status before
+    if not first_time:
+        print_status()
     update_kirin_docker_tag()
-    execute(deploy_kirin)
-    execute(deploy_kirin_beat)
+    execute(deploy_kirin, first_time=first_time)
+    execute(deploy_kirin_beat, first_time=first_time)
     print_status()
 
 
@@ -176,11 +185,13 @@ def print_status():
 
 @task()
 @roles('kirin-beat')
-def deploy_kirin_beat():
+def deploy_kirin_beat(first_time=False):
     """
     Deploy Kirin beat
     :return:
     """
+    first_time = convert2bool(first_time)
+
     if len(env.roledefs['kirin-beat']) != 1:
         abort('Error : Only one beat can exist, you provided kirin-beat role on {}'.format(env.roledefs['kirin-beat']))
 
@@ -193,7 +204,7 @@ def deploy_kirin_beat():
 
     pull_kirin_image()
 
-    deploy_kirin_beat_container_safe(env.host_string)
+    deploy_kirin_beat_container_safe(env.host_string, first_time=first_time)
 
     # need to wait between both node execution because using same token
     time.sleep(5)
@@ -201,11 +212,12 @@ def deploy_kirin_beat():
 
 @task()
 @roles('kirin')
-def deploy_kirin():
+def deploy_kirin(first_time=False):
     """
     Deploy Kirin
     :return:
     """
+    first_time = convert2bool(first_time)
 
     if env.use_load_balancer:
         node_manager = SafeDeploymentManager()
@@ -221,7 +233,7 @@ def deploy_kirin():
 
     pull_kirin_image()
 
-    deploy_kirin_container_safe(env.host_string, node_manager)
+    deploy_kirin_container_safe(env.host_string, node_manager, first_time=first_time)
 
     # need to wait between both node execution because using same token
     time.sleep(5)
@@ -261,10 +273,12 @@ def migrate(compose_file, revision='head'):
     run('docker-compose -f {} run --rm --no-deps kirin ./manage.py db upgrade {}'.format(compose_file, revision))
 
 
-def restart(compose_file):
+def restart(compose_file, first_time=False):
     """ Restart containers properly """
-    stop_container(compose_file)
-    remove_container(compose_file)
+    # Unless the platform is empty, previous container needs to be managed
+    if not first_time:
+        stop_container(compose_file)
+        remove_container(compose_file)
     remove_targeted_images()
     start_container(compose_file)
 
