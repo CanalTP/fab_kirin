@@ -1,6 +1,18 @@
 # fab_kirin
 Kirin's deployment mechanisms
 
+## Invocation
+
+For a regular deployment (on a platform with Kirin already running):
+```bash
+PYTHONPATH=/path/to/kirin_deployment_conf/ fab use:<platform_file_name> deploy
+```
+
+For a first-time deployment on an empty platform:
+```bash
+PYTHONPATH=/path/to/kirin_deployment_conf/ fab use:<platform_file_name> deploy:first_time=True
+```
+
 ## deployment files
 
 File should look like:
