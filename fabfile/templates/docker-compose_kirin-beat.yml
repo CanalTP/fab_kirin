@@ -5,7 +5,7 @@ services:
   kirin_beat:
     image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
     restart: always
-    command: celery beat -A kirin.tasks.celery
+    command: sh -c "rm -f /tmp/kirin-celerybeat.pid ; celery beat -A kirin.tasks.celery --pidfile=/tmp/kirin-celerybeat.pid"
 {% if env.use_syslog %}
     logging:
       driver: "syslog"
