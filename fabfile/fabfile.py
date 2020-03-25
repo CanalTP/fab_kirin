@@ -116,8 +116,9 @@ def deploy_kirin_container_safe(server, node_manager, first_time=False):
     """
     with settings(host_string=server):
         node_manager.disable_node(server)
-        migrate('docker-compose_kirin.yml')
-        restart('docker-compose_kirin.yml', first_time=first_time)
+        dc_filepath = '{path}/docker-compose_kirin.yml'.format(path=env.path)
+        migrate(dc_filepath)
+        restart(dc_filepath, first_time=first_time)
         test_deployment()
         node_manager.enable_node(server)
 
@@ -126,7 +127,8 @@ def deploy_kirin_beat_container_safe(server, first_time=False):
     """ Restart kirin on a specific server
     """
     with settings(host_string=server):
-        restart('docker-compose_kirin-beat.yml', first_time=first_time)
+        dc_filepath = '{path}/docker-compose_kirin-beat.yml'.format(path=env.path)
+        restart(dc_filepath, first_time=first_time)
 
 
 def pull_kirin_image():
