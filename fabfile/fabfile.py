@@ -153,10 +153,15 @@ def update_kirin_docker_tag():
     """
     To tag the image, we pull the previous tag, tag it as our own and push it
     """
-    local('docker pull {image}:{prev_tag}'.format(image=env.docker_image_kirin, prev_tag=env.previous_docker_tag))
-    local('docker tag {image}:{prev_tag} {image}:{new_tag}'
-        .format(image=env.docker_image_kirin, prev_tag=env.previous_docker_tag, new_tag=env.current_docker_tag))
-    local('docker push {image}:{new_tag}'.format(image=env.docker_image_kirin, new_tag=env.current_docker_tag))
+    if not env.is_local:
+        local('docker pull {image}:{prev_tag}'
+              .format(image=env.docker_image_kirin, prev_tag=env.previous_docker_tag))
+        local('docker tag {image}:{prev_tag} {image}:{new_tag}'
+              .format(image=env.docker_image_kirin,
+                      prev_tag=env.previous_docker_tag,
+                      new_tag=env.current_docker_tag))
+        local('docker push {image}:{new_tag}'
+              .format(image=env.docker_image_kirin, new_tag=env.current_docker_tag))
 
 
 @task
