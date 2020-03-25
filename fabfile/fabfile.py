@@ -146,6 +146,7 @@ def pull_kirin_image():
     """
     Retrieve new kirin image
     """
+    if not env.is_local:
         env.run_func('docker pull {image}:{new_tag}'.format(image=env.docker_image_kirin, new_tag=env.current_docker_tag))
 
 
