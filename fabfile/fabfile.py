@@ -1,6 +1,6 @@
 # coding=utf-8
 import json
-from fabric.api import *
+from fabric.api import local, run, env, abort, settings, task, execute, roles
 from importlib import import_module
 import abc
 import requests
@@ -54,7 +54,8 @@ def check_node(query, headers=None):
 
 class SafeDeploymentManager(DeploymentManager):
     # avoid the message output : InsecureRequestWarning: Unverified HTTPS request is being made.
-    # Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/security.html
+    # Adding certificate verification is strongly advised.
+    # See: https://urllib3.readthedocs.io/en/latest/security.html
     requests.packages.urllib3.disable_warnings()
 
     def __init__(self):
@@ -195,7 +196,8 @@ def deploy_kirin_beat(first_time=False):
     first_time = convert2bool(first_time)
 
     if len(env.roledefs['kirin-beat']) != 1:
-        abort('Error : Only one beat can exist, you provided kirin-beat role on {}'.format(env.roledefs['kirin-beat']))
+        abort('Error : Only one beat can exist, you provided kirin-beat role on {}'
+              .format(env.roledefs['kirin-beat']))
 
     upload_template('kirin.env', '{}'.format(env.path), context={'env': env})
     upload_template('docker-compose_kirin-beat.yml', '{}'.format(env.path), context={'env': env})
