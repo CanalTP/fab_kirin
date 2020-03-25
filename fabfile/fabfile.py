@@ -177,7 +177,10 @@ def print_status():
             print("")
             return True
 
-    request = 'http://{}/status'.format(env.kirin_host)
+    api_root_global = env.kirin_host
+    if env.is_local:  # for a local deployment, port 80 is not mandatory
+        api_root_global = '{}:{}'.format(env.kirin_host, env.kirin_host_port)
+    request = 'http://{}/status'.format(api_root_global)
     try:
         Retrying(stop_max_delay=30000, wait_fixed=100,
                  retry_on_result=lambda res: not res)\
@@ -291,7 +294,10 @@ def test_deployment():
     """ Verify api kirin is OK """
 
     headers = {'Host': env.kirin_host}
-    request = 'http://{}/status'.format(env.host_string)
+    api_root_node = env.host_string
+    if env.is_local:  # for a local deployment, port 80 is not mandatory
+        api_root_node = '{}:{}'.format(env.host_string, env.kirin_host_port)
+    request = 'http://{}/status'.format(api_root_node)
 
     try:
         Retrying(stop_max_delay=30000, wait_fixed=100,
