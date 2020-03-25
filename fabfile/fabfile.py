@@ -34,6 +34,16 @@ def convert2bool(v):
     return str(v).lower() in ("yes", "y", "true", "t", "1")
 
 
+def manage_local():
+    if not hasattr(env, "is_local"):
+        env.is_local = False
+
+    if env.is_local:
+        env.run_func = local
+    else:
+        env.run_func = run
+
+
 def check_node(query, headers=None):
     """
     poll on state of execution until it gets a 'succeeded' status
@@ -136,7 +146,7 @@ def pull_kirin_image():
     """
     Retrieve new kirin image
     """
-    run('docker pull {image}:{new_tag}'.format(image=env.docker_image_kirin, new_tag=env.current_docker_tag))
+        env.run_func('docker pull {image}:{new_tag}'.format(image=env.docker_image_kirin, new_tag=env.current_docker_tag))
 
 
 def update_kirin_docker_tag():
@@ -155,6 +165,8 @@ def deploy(first_time=False):
     Deploy Kirin services
     """
     first_time = convert2bool(first_time)
+    manage_local()
+
     # Unless platform is empty, display status before
     if not first_time:
         print_status()
@@ -197,6 +209,7 @@ def deploy_kirin_beat(first_time=False):
     :return:
     """
     first_time = convert2bool(first_time)
+    manage_local()
 
     if len(env.roledefs['kirin-beat']) != 1:
         abort('Error : Only one beat can exist, you provided kirin-beat role on {}'
@@ -225,6 +238,7 @@ def deploy_kirin(first_time=False):
     :return:
     """
     first_time = convert2bool(first_time)
+    manage_local()
 
     if env.use_load_balancer:
         node_manager = SafeDeploymentManager()
@@ -249,35 +263,37 @@ def deploy_kirin(first_time=False):
 def remove_targeted_image(id_image):
     """ Remove an image """
     with settings(warn_only=True):
-        run('docker rmi {}'.format(id_image))
+        env.run_func('docker rmi {}'.format(id_image))
 
 
 def remove_targeted_images():
     """ Remove several images """
-    images_to_remove = run("docker images | grep kirin | awk '{print $3}' && docker images -f dangling=true -q")
+    images_to_remove = env.run_func("docker images | grep kirin | awk '{print $3}' && "
+                                    "docker images -f dangling=true -q")
     for image in images_to_remove.split('\n'):
         remove_targeted_image(image.strip('\r'))
 
 
 def start_container(compose_file):
     """ Start targeted containers in daemon mode and restart them if crash """
-    run('docker-compose -f {} up --force-recreate -d'.format(compose_file))
+    env.run_func('docker-compose -f {} up --force-recreate -d'.format(compose_file))
 
 
 def stop_container(compose_file):
     """ Stop targeted containers """
-    run('docker-compose -f {} stop'.format(compose_file))
+    env.run_func('docker-compose -f {} stop'.format(compose_file))
 
 
 def remove_container(compose_file):
     """ Remove targeted containers without asking confirmation and
     remove volumes associated with containers
     """
-    run('docker-compose -f {} rm -v -f'.format(compose_file))
+    env.run_func('docker-compose -f {} rm -v -f'.format(compose_file))
 
 
 def migrate(compose_file, revision='head'):
-    run('docker-compose -f {} run --rm --no-deps kirin ./manage.py db upgrade {}'.format(compose_file, revision))
+    env.run_func('docker-compose -f {} run --rm --no-deps kirin ./manage.py db upgrade {}'
+                 .format(compose_file, revision))
 
 
 def restart(compose_file, first_time=False):
