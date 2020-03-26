@@ -1,0 +1,3 @@
+demo/conf/*.py
+!demo/conf/base.py
+!demo/conf/local_dockerized_deps.py
