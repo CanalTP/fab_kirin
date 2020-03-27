@@ -24,11 +24,13 @@ def local_dockerized_deps():
     env.navitia_url = 'http://172.17.0.1:5000/'  # Navitia on host, must be reachable from container
     env.navitia_token = None
 
-    env.postgres_database = 'kirin_db'
+    env.postgres_database = '172.17.0.1'
+    env.postgres_port = 35432
     env.user_kirin_postgres = 'kirin'
     env.pwd_kirin_postgres = 'kirin'
 
-    env.redis_host = 'kirin_redis'
+    env.redis_host = '172.17.0.1'
+    env.redis_port = 36379
     env.redis_db = 1
 
     env.rabbitmq_url = '172.17.0.1'  # Navitia RabbitMQ on host, must be reachable from container
@@ -36,7 +38,7 @@ def local_dockerized_deps():
     env.pwd_rabbitmq = 'navitia'
     env.rabbitmq_vhost = '/'
 
-    env.celery_broker_url = 'pyamqp://guest:guest@kirin_rabbitmq:5672//?heartbeat=60'
+    env.celery_broker_url = 'pyamqp://guest:guest@172.17.0.1:35672//?heartbeat=60'
 
     env.use_logger = True
     env.use_syslog = False

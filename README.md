@@ -17,7 +17,7 @@ PYTHONPATH=/path/to/kirin_deployment_conf/ fab use:<platform_file_name> deploy:f
 
 ### Demo
 
-A demo for local deployment is available, please see [instructions there](demo/README.md).
+A demo for local deployment is available, please see [instructions](demo/README.md).
 
 ### deployment files
 

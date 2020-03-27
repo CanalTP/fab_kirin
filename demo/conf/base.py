@@ -37,8 +37,6 @@ env.redis_host = 'localhost'  # Redis, must be reachable from container
 env.redis_port = 6379
 env.redis_password = ''  # No password is needed by default
 
-env.docker_network = 'kirin_network'
-
 env.cots_par_iv_circuit_breaker_max_fail = 4
 env.cots_par_iv_circuit_breaker_timeout_s = 60
 env.cots_par_iv_timeout_token = 30*60

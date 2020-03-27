@@ -18,15 +18,16 @@ Provide a Navitia instance, running on `localhost:5000` and reachable from withi
 Make sure that user `navitia` has read/write access to RabbitMQ's vhost used by
 Kraken (`/` in current conf)
 
+Create a workspace for fab_kirin:
+```bash
+mkdir -p ~/fab_kirin_workspace                # matching 'env.path' in local_dockerized_deps
+mkdir -p ~/fab_kirin_workspace/postgres-data  # matching 'kirin_db' volume mounted in docker-compose_deps.yml
+```
+
 Install python dependencies (using a virtualenv is recommended) with:
 ```bash
 cd /path/to/fab_kirin
 pip install -r requirements.txt -U
-```
-
-Create docker network named `kirin_network`:
-```bash
-docker network create kirin_network
 ```
 
 Create and run containers for dependencies:

@@ -9,16 +9,20 @@ services:
             POSTGRES_USER: "kirin"
             POSTGRES_PASSWORD: "kirin"
             POSTGRES_DB: "kirin"
+        volumes:
+            - ~/fab_kirin_workspace/postgres-data:/var/lib/postgresql/data
+        ports:
+            - 35432:5432
 
     kirin_redis:
         image: redis:5-alpine
         restart: always
+        ports:
+            - 36379:6379
 
     kirin_rabbitmq:
         image: rabbitmq:3-management-alpine
         restart: always
-
-networks:
-  default:
-    external:
-      name: kirin_network
+        ports:
+            - 35672:5672
+            - 45672:15672
