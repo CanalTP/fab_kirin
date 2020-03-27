@@ -12,6 +12,7 @@ env.is_local = False
 env.new_relic_key = None
 
 env.postgres_database = 'localhost'  # Postgres, must be reachable from container
+env.postgres_port = 5432
 env.user_kirin_postgres = 'kirin'
 env.pwd_kirin_postgres = 'kirin'
 env.kirin_postgres_database = 'kirin'
@@ -19,6 +20,7 @@ env.kirin_postgres_database = 'kirin'
 env.rundeck_token = None
 
 env.rabbitmq_url = 'localhost'  # Navitia RabbitMQ, must be reachable from container
+env.rabbitmq_port = 5672
 env.user_rabbitmq = 'navitia'
 env.pwd_rabbitmq = 'navitia'
 env.rabbitmq_vhost = 'navitia'  # vhost to communicate with Navitia (Kraken)
