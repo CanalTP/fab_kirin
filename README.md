@@ -13,7 +13,13 @@ For a first-time deployment on an empty platform:
 PYTHONPATH=/path/to/kirin_deployment_conf/ fab use:<platform_file_name> deploy:first_time=True
 ```
 
-## deployment files
+## Usage
+
+### Demo
+
+A demo for local deployment is available, please see [instructions](demo/README.md).
+
+### deployment files
 
 File should look like:
 
