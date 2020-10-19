@@ -45,13 +45,7 @@ def prod():
 
     env.postgres_database = '<SQL_db_platform>'
     env.navitia_url = 'https://api.navitia.io'
-    env.navitia_token = '<sncf-access-token>'
     env.rabbitmq_url = '<rabbitmq_platform>'  # rabbitmq where disruptions are published for navitia
-
-    env.navitia_gtfs_rt_instance = 'ca-qc-sherbrooke'  # sherbrooke coverage name
-    env.navitia_gtfs_rt_token = '<sherbrooke-access-token>'
-    env.gtfs_rt_contributor = 'realtime.sherbrooke'  # rabbitmq topic, to match with rt_topics in kraken.ini (and is_realtime_enabled=True)
-    env.gtfs_rt_feed_url = 'http://<sherbrooke-url>/tripUpdates.pb'  # url of sherbrooke trip update protobuf
 
     env.celery_broker_url = 'pyamqp://<user>:<mdp>@<platform>:<port>/<vhost>?heartbeat=60'  # beware to open access to vhost for user in rabbitmq (for beat-worker communication)
 

@@ -22,7 +22,6 @@ def local_dockerized_deps():
     env.use_load_balancer = False
 
     env.navitia_url = 'http://172.17.0.1:5000/'  # Navitia on host, must be reachable from container
-    env.navitia_token = None
 
     env.postgres_database = '172.17.0.1'
     env.postgres_port = 35432

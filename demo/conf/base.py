@@ -43,13 +43,3 @@ env.cots_par_iv_timeout_token = 30*60
 env.cots_par_iv_cache_timeout = 60*60
 env.cots_par_iv_request_timeout = 2
 env.gtfs_rt_timeout = 5
-
-
-# Deprecated vars (TODO: remove)
-env.cots_contributor = None
-env.navitia_instance = None
-
-env.navitia_gtfs_rt_instance = None
-env.navitia_gtfs_rt_token = None
-env.gtfs_rt_contributor = None
-env.gtfs_rt_feed_url = None
