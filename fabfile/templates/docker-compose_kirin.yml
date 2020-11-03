@@ -20,7 +20,7 @@ services:
       KIRIN_USE_GEVENT: 'true'
 {% if env.new_relic_key %}
     volumes:
-        - {{env.path}}/newrelic.ini:/usr/src/app/newrelic.ini
+      - {{env.path}}/newrelic.ini:/usr/src/app/newrelic.ini
 {% endif %}
 
   kirin_background:
@@ -40,7 +40,7 @@ services:
       KIRIN_USE_GEVENT: 'true'
 {% if env.new_relic_key %}
     volumes:
-        - {{env.path}}/newrelic.ini:/usr/src/app/newrelic.ini
+      - {{env.path}}/newrelic.ini:/usr/src/app/newrelic.ini
 {% endif %}
 
   kirin_worker:
@@ -58,7 +58,27 @@ services:
     env_file: kirin.env
 {% if env.new_relic_key %}
     volumes:
-        - {{env.path}}/newrelic.ini:/usr/src/app/newrelic.ini
+      - {{env.path}}/newrelic.ini:/usr/src/app/newrelic.ini
+{% endif %}
+
+  kirin_piv_worker:
+    image: {{env.docker_image_kirin}}:{{env.current_docker_tag}}
+    restart: always
+    command: python ./manage.py piv_worker
+{% if env.use_syslog %}
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "{{env.protocole_syslog}}://{{env.host_syslog}}:{{env.port_syslog}}"
+        syslog-facility: "local7"
+        tag: "kirin-piv-worker"
+{% endif %}
+    env_file: kirin.env
+    environment:
+      KIRIN_USE_GEVENT: 'true'
+{% if env.new_relic_key %}
+    volumes:
+      - {{env.path}}/newrelic.ini:/usr/src/app/newrelic.ini
 {% endif %}
 
 {% if env.docker_network %}
