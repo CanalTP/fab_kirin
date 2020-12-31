@@ -1,4 +1,4 @@
-FROM python:3-slim
+FROM python:3.9.1-slim
 
 # add docker cli
 ARG DOCKER_VERSION="5:19.03.13~3-0~debian-buster"
