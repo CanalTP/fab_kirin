@@ -23,7 +23,7 @@ Same principle as above for `fabric` usage, but this is an example to focus on s
 docker run --volume "/var/run/docker.sock:/var/run/docker.sock" --volume "/path/to/folder/containing/kirin/<platform_file_name>.py:/kirin_conf" --workdir "/kirin_conf" navitia/fab_kirin use:<platform_file_name> deploy
 ```
 
-The Docker socket is required since few Docker commands are run by `fabric`.
+The Docker socket is required since some Docker commands are run by `fabric`.
 
 The other volume is used to share `<platform_file_name>.py`. The `workdir` option must be set to the same value than the target of the shared volume to make the `<platform_file_name>.py` reachable by `fabric`.
 
