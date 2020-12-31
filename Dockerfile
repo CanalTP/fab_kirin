@@ -21,5 +21,6 @@ RUN pip install -r /requirements.txt -U
 RUN mkdir /fabfile
 COPY fabfile /fabfile
 WORKDIR /fabfile
+ENV PYTHONPYCACHEPREFIX=/tmp
 
 ENTRYPOINT [ "fab" ]
