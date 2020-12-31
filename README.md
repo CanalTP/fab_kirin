@@ -25,7 +25,7 @@ docker run --volume "/var/run/docker.sock:/var/run/docker.sock" --volume "/path/
 
 The Docker socket is required since some Docker commands are run by `fabric`.
 
-The other volume is used to share `<platform_file_name>.py`. The `workdir` option must be set to the same value than the target of the shared volume to make the `<platform_file_name>.py` reachable by `fabric`.
+The `kirin_conf` volume is used to share `<platform_file_name>.py`. The `workdir` option must be set to the same value than the target of the shared volume to make the `<platform_file_name>.py` reachable by `fabric`.
 
 ## Usage
 
