@@ -17,12 +17,9 @@ RUN BUILD_DEPENDENCIES="apt-transport-https curl gnupg-agent software-properties
 COPY requirements.txt /
 RUN pip install -r /requirements.txt -U
 
-# set current workspace in PythonPath to be able to find later configuration files
-ENV PYTHONPATH=.
-
 # setup kirin fabric
 RUN mkdir /fabfile
 COPY fabfile /fabfile
-RUN echo "fabfile = /fabfile/fabfile.py" > ~/.fabricrc
+WORKDIR /fabfile
 
 ENTRYPOINT [ "fab" ]
