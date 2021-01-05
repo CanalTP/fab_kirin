@@ -20,7 +20,7 @@ PYTHONPATH=/path/to/kirin_deployment_conf/ fab use:<platform_file_name> deploy:f
 Same principle as above for `fabric` usage, but this is an example to focus on specific options to use for Docker:
 
 ``` bash
-docker run --volume "/var/run/docker.sock:/var/run/docker.sock" --volume "/path/to/folder/containing/kirin_conf/<platform_file_name>.py:/kirin_conf" --env "PYTHONPATH=/kirin_conf" navitia/fab_kirin use:<platform_file_name> deploy
+docker run --volume "/var/run/docker.sock:/var/run/docker.sock" --volume "/path/to/folder/containing/kirin_conf/<platform_file_name>.py:/kirin_conf" --env "PYTHONPATH=/kirin_conf" navitia/fab_kirin fab use:<platform_file_name> deploy
 ```
 
 The Docker socket is required since some Docker commands are run by `fabric`.

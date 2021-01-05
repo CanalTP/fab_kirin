@@ -22,5 +22,3 @@ RUN mkdir /fabfile
 COPY fabfile /fabfile
 WORKDIR /fabfile
 ENV PYTHONPYCACHEPREFIX=/tmp
-
-ENTRYPOINT [ "fab" ]
