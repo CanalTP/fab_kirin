@@ -3,6 +3,8 @@ Kirin's deployment mechanisms
 
 ## Invocation
 
+### from source code with a working setup
+
 For a regular deployment (on a platform with Kirin already running):
 ```bash
 PYTHONPATH=/path/to/kirin_deployment_conf/ fab use:<platform_file_name> deploy
@@ -12,6 +14,18 @@ For a first-time deployment on an empty platform:
 ```bash
 PYTHONPATH=/path/to/kirin_deployment_conf/ fab use:<platform_file_name> deploy:first_time=True
 ```
+
+### using Docker image
+
+Same principle as above for `fabric` usage, but this is an example to focus on specific options to use for Docker:
+
+``` bash
+docker run --volume "/var/run/docker.sock:/var/run/docker.sock" --volume "/path/to/folder/containing/kirin_conf/<platform_file_name>.py:/kirin_conf" --env "PYTHONPATH=/kirin_conf" navitia/fab_kirin fab use:<platform_file_name> deploy
+```
+
+The binding of the Docker socket is required since some Docker commands are run by `fabric`.
+
+The `kirin_conf` volume is used to share `<platform_file_name>.py`. The `PYTHONPATH` environment variable must be set to the same value than the target of the shared volume to make the `<platform_file_name>.py` reachable by `fabric`.
 
 ## Usage
 
